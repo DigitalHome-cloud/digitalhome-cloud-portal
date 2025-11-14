@@ -1,0 +1,239 @@
+/* Basic reset-ish */
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: #0f172a; /* dark slate */
+  color: #e5e7eb; /* light gray */
+}
+
+/* Root layout */
+.dhc-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.dhc-header {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+  backdrop-filter: blur(10px);
+  background: rgba(15, 23, 42, 0.9);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.dhc-header-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dhc-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.dhc-logo-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #22c55e, #0ea5e9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #0b1120;
+}
+
+.dhc-logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.dhc-logo-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.dhc-logo-subtitle {
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+/* Nav */
+.dhc-nav {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.dhc-nav-link {
+  font-size: 0.85rem;
+  color: #cbd5f5;
+  text-decoration: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.dhc-nav-link:hover {
+  border-color: rgba(148, 163, 184, 0.7);
+  background: rgba(15, 23, 42, 0.7);
+}
+
+/* Content */
+.dhc-content {
+  flex: 1;
+}
+
+.dhc-main {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+}
+
+/* Hero */
+.dhc-hero {
+  margin-bottom: 2rem;
+}
+
+.dhc-hero-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+
+.dhc-hero-subtitle {
+  margin: 0;
+  color: #9ca3af;
+}
+
+/* Sections */
+.dhc-tiles-section {
+  margin-top: 1.5rem;
+}
+
+.dhc-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* Tile grid */
+.dhc-tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+/* Tile */
+.dhc-tile {
+  background: radial-gradient(circle at top left, #1e293b, #020617);
+  border-radius: 1.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  padding: 1rem;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition:
+    transform 0.12s ease-out,
+    box-shadow 0.12s ease-out,
+    border-color 0.12s ease-out,
+    background 0.12s ease-out;
+}
+
+.dhc-tile--active:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.7);
+  border-color: #22c55e;
+  background: radial-gradient(circle at top left, #1f2937, #020617);
+}
+
+.dhc-tile--disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.dhc-tile-icon {
+  font-size: 1.8rem;
+  margin-bottom: 0.7rem;
+}
+
+.dhc-tile-body {
+  flex: 1;
+}
+
+.dhc-tile-title {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.dhc-tile-description {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.dhc-tile-footer {
+  margin-top: 0.8rem;
+}
+
+/* Badges */
+.dhc-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.dhc-badge-primary {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.dhc-badge-neutral {
+  background: rgba(148, 163, 184, 0.15);
+  color: #e5e7eb;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.dhc-badge-locked {
+  background: rgba(248, 113, 113, 0.12);
+  color: #fecaca;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+}
+
+/* Footer */
+.dhc-footer {
+  border-top: 1px solid rgba(148, 163, 184, 0.3);
+  padding: 0.75rem 1.25rem;
+  background: #020617;
+}
+
+.dhc-footer-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.dhc-footer-secondary {
+  opacity: 0.8;
+}
