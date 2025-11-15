@@ -237,3 +237,22 @@ body {
 .dhc-footer-secondary {
   opacity: 0.8;
 }
+.dhc-text-section {
+  max-width: 720px;
+  margin: 2rem auto;
+  font-size: 1rem;
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+.dhc-text-section p {
+  margin-bottom: 1rem;
+}
+
+.dhc-section-subtitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: #e2e8f0;
+}

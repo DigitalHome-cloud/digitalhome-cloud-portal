@@ -8,10 +8,7 @@ const Layout = ({ children }) => {
       <div className="dhc-content">{children}</div>
       <footer className="dhc-footer">
         <div className="dhc-footer-inner">
-          <span>© {new Date().getFullYear()} DigitalHome.Cloud</span>
-          <span className="dhc-footer-secondary">
-            Nature meets technology – DHC Platform
-          </span>
+          <span>© {new Date().getFullYear()} D-LAB-5</span>
         </div>
       </footer>
     </div>
