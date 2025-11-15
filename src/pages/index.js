@@ -2,38 +2,77 @@ import * as React from "react";
 import Layout from "../components/Layout";
 import TileGrid from "../components/TileGrid";
 
-const tiles = [
+// Placeholder until Cognito is added
+// Later you’ll replace these with your Cognito group results
+const user = {
+  isAuthenticated: false,
+  groups: [], // e.g. ["dhc-users", "dhc-core-team"]
+};
+
+// -------------------------------
+// Tile Definitions by Category
+// -------------------------------
+
+const generalTiles = [
   {
-    id: "smarthome-designer",
-    title: "DHC SmartHome Designer",
-    description: "Design and configure your digital homes from the DHC ontology.",
-    icon: "🏠",
-    url: "https://designer.digitalhome.cloud", // placeholder
+    id: "about",
+    title: "About DigitalHome.Cloud",
+    description: "Learn more about the DHC platform and vision.",
+    icon: "ℹ️",
+    url: "/about",
     status: "available",
   },
   {
-    id: "ontology-designer",
-    title: "DHC Ontology Designer",
-    description: "Create and evolve the DHC core ontology and equipment libraries.",
-    icon: "🧠",
-    url: "https://ontology.digitalhome.cloud", // placeholder
-    status: "restricted", // core team only, later via Cognito
-  },
-  {
-    id: "docs",
-    title: "Docs & Ontology",
-    description: "Explore the semantic core, Brick alignment and technical docs.",
-    icon: "📘",
-    url: "https://github.com/DigitalHome-cloud",
+    id: "signin",
+    title: "Sign In",
+    description: "Access your DigitalHome.Cloud account.",
+    icon: "🔐",
+    url: "/signin",
     status: "available",
   },
   {
-    id: "operator",
-    title: "SmartHome Operator",
-    description: "Monitor and operate your homes (coming soon).",
-    icon: "🤖",
-    url: "#",
-    status: "coming-soon",
+    id: "signup",
+    title: "Sign Up",
+    description: "Create your DigitalHome.Cloud account.",
+    icon: "🧑‍💻",
+    url: "/signup",
+    status: "available",
+  },
+  {
+    id: "coffee",
+    title: "Pay Me a Coffee",
+    description: "Support the DigitalHome.Cloud project.",
+    icon: "☕",
+    url: "https://buymeacoffee.com",
+    status: "available",
+  },
+];
+
+// Access-protected DEMO tiles -------------------
+const hasDesignAccess = user.groups.includes("dhc-users");
+const hasOperateAccess = user.groups.includes("dhc-operators");
+
+// Row 2: Design
+const designTiles = [
+  {
+    id: "design-demo",
+    title: "SmartHome Designer DEMO",
+    description: "Start designing a sample digital home.",
+    icon: "🏗️",
+    url: "https://designer.digitalhome.cloud/demo",
+    status: hasDesignAccess ? "available" : "restricted",
+  },
+];
+
+// Row 3: Operate
+const operateTiles = [
+  {
+    id: "operate-demo",
+    title: "SmartHome Operator DEMO",
+    description: "Operate a simulated smart home.",
+    icon: "⚙️",
+    url: "https://operator.digitalhome.cloud/demo",
+    status: hasOperateAccess ? "available" : "restricted",
   },
 ];
 
@@ -41,6 +80,7 @@ const IndexPage = () => {
   return (
     <Layout>
       <main className="dhc-main">
+        {/* HERO */}
         <section className="dhc-hero">
           <h1 className="dhc-hero-title">DigitalHome.Cloud Portal</h1>
           <p className="dhc-hero-subtitle">
@@ -48,9 +88,22 @@ const IndexPage = () => {
           </p>
         </section>
 
+        {/* ROW 1 */}
         <section className="dhc-tiles-section">
-          <h2 className="dhc-section-title">Apps</h2>
-          <TileGrid tiles={tiles} />
+          <h2 className="dhc-section-title">General</h2>
+          <TileGrid tiles={generalTiles} />
+        </section>
+
+        {/* ROW 2 */}
+        <section className="dhc-tiles-section">
+          <h2 className="dhc-section-title">Design</h2>
+          <TileGrid tiles={designTiles} />
+        </section>
+
+        {/* ROW 3 */}
+        <section className="dhc-tiles-section">
+          <h2 className="dhc-section-title">Operate</h2>
+          <TileGrid tiles={operateTiles} />
         </section>
       </main>
     </Layout>
@@ -58,3 +111,4 @@ const IndexPage = () => {
 };
 
 export default IndexPage;
+
