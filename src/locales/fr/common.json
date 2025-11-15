@@ -1,0 +1,74 @@
+{
+  "app": {
+    "title": "Portail DigitalHome.Cloud",
+    "subtitle": "Votre point de départ pour concevoir, gérer et exploiter des maisons intelligentes."
+  },
+  "nav": {
+    "home": "Accueil",
+    "about": "À propos",
+    "github": "GitHub"
+  },
+  "section": {
+    "general": "Général",
+    "design": "Conception",
+    "operate": "Exploitation"
+  },
+  "tile": {
+    "about": {
+      "title": "À propos de DigitalHome.Cloud",
+      "desc": "Découvrez la plateforme et sa vision."
+    },
+    "signin": {
+      "title": "Connexion",
+      "desc": "Accédez à votre compte DigitalHome.Cloud."
+    },
+    "signup": {
+      "title": "Créer un compte",
+      "desc": "Créez votre compte DigitalHome.Cloud."
+    },
+    "coffee": {
+      "title": "M’offrir un café",
+      "desc": "Soutenez le projet DigitalHome.Cloud."
+    },
+    "design": {
+      "demo": {
+        "title": "DEMO SmartHome Designer",
+        "desc": "Créez un exemple de maison intelligente."
+      }
+    },
+    "operate": {
+      "demo": {
+        "title": "DEMO SmartHome Operator",
+        "desc": "Pilotez une maison intelligente simulée."
+      }
+    }
+  },
+  "badge": {
+    "comingSoon": "Bientôt",
+    "restricted": "Restreint",
+    "open": "Ouvert"
+  },
+  "about": {
+    "hero": {
+      "title": "À propos de DigitalHome.Cloud",
+      "subtitle": "Une technologie au service de la nature, de la simplicité et de la créativité humaine."
+    },
+    "p1": "DigitalHome.Cloud est une plateforme ouverte et extensible conçue pour aider à planifier, construire et exploiter des maisons intelligentes de manière holistique et durable. La philosophie repose sur D-LAB-5 — un état d’esprit où la technologie est un outil d’accompagnement, jamais une fin en soi.",
+    "p2": "Grâce à des modèles sémantiques, à l’automatisation et à des outils de conception intuitifs, DigitalHome.Cloud relie le monde numérique au monde physique afin d’améliorer la qualité de vie, réduire la complexité et respecter la nature.",
+    "vision": {
+      "title": "La Vision",
+      "body": "DigitalHome.Cloud est le début d’un écosystème plus vaste où la technologie moderne, l’artisanat traditionnel et la conscience environnementale se rejoignent. Inspirée par l’esprit « Where roots meet digital », la plateforme évolue de manière organique — fonctionnalité par fonctionnalité, maison par maison, toujours centrée sur l’humain."
+    },
+    "oss": {
+      "title": "Open Source & Communauté",
+      "body": "Tous les composants centraux de la plateforme sont open source au sein de l’organisation GitHub DigitalHome-cloud. Les contributions, idées et collaborations sont les bienvenues pour rendre les maisons intelligentes plus accessibles, durables et faciles à utiliser."
+    },
+    "dlab": {
+      "title": "Propulsé par D-LAB-5",
+      "body": "D-LAB-5 est une initiative familiale d’innovation combinant ingénierie, architecture durable, communication et résolution de problèmes inspirée par la nature. DigitalHome.Cloud est l’un des premiers projets développés dans ce cadre."
+    }
+  },
+  "footer": {
+    "tagline": "La nature rencontre la technologie – DigitalHome.Cloud"
+  }
+}

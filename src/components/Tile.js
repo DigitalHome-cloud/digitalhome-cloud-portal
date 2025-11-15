@@ -1,8 +1,9 @@
 import * as React from "react";
+import { useTranslation } from "gatsby-plugin-react-i18next";
 
 const Tile = ({ tile }) => {
+  const { t } = useTranslation();
   const { title, description, icon, url, status } = tile;
-
   const isDisabled = status === "coming-soon" || status === "restricted";
 
   const handleClick = () => {
@@ -13,9 +14,7 @@ const Tile = ({ tile }) => {
 
   return (
     <button
-      className={`dhc-tile ${
-        isDisabled ? "dhc-tile--disabled" : "dhc-tile--active"
-      }`}
+      className={`dhc-tile ${isDisabled ? "dhc-tile--disabled" : "dhc-tile--active"}`}
       onClick={handleClick}
       type="button"
     >
@@ -26,13 +25,19 @@ const Tile = ({ tile }) => {
       </div>
       <div className="dhc-tile-footer">
         {status === "coming-soon" && (
-          <span className="dhc-badge dhc-badge-neutral">Coming soon</span>
+          <span className="dhc-badge dhc-badge-neutral">
+            {t("badge.comingSoon")}
+          </span>
         )}
         {status === "restricted" && (
-          <span className="dhc-badge dhc-badge-locked">Restricted</span>
+          <span className="dhc-badge dhc-badge-locked">
+            {t("badge.restricted")}
+          </span>
         )}
         {status === "available" && (
-          <span className="dhc-badge dhc-badge-primary">Open</span>
+          <span className="dhc-badge dhc-badge-primary">
+            {t("badge.open")}
+          </span>
         )}
       </div>
     </button>

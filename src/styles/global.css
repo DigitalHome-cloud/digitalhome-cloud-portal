@@ -1,20 +1,17 @@
-/* Basic reset-ish */
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
-  background: #0f172a; /* dark slate */
-  color: #e5e7eb; /* light gray */
+  background: #0f172a;
+  color: #e5e7eb;
 }
 
-/* Root layout */
 .dhc-root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-/* Header */
 .dhc-header {
   border-bottom: 1px solid rgba(148, 163, 184, 0.3);
   backdrop-filter: blur(10px);
@@ -67,10 +64,10 @@ body {
   color: #9ca3af;
 }
 
-/* Nav */
 .dhc-nav {
   display: flex;
   gap: 0.75rem;
+  align-items: center;
 }
 
 .dhc-nav-link {
@@ -87,7 +84,27 @@ body {
   background: rgba(15, 23, 42, 0.7);
 }
 
-/* Content */
+.dhc-lang-switch {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.75rem;
+}
+
+.dhc-lang-btn {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: transparent;
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+.dhc-lang-btn--active {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: #22c55e;
+}
+
 .dhc-content {
   flex: 1;
 }
@@ -98,7 +115,6 @@ body {
   padding: 2rem 1.25rem 3rem;
 }
 
-/* Hero */
 .dhc-hero {
   margin-bottom: 2rem;
 }
@@ -114,7 +130,6 @@ body {
   color: #9ca3af;
 }
 
-/* Sections */
 .dhc-tiles-section {
   margin-top: 1.5rem;
 }
@@ -125,14 +140,12 @@ body {
   margin-bottom: 1rem;
 }
 
-/* Tile grid */
 .dhc-tile-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.25rem;
 }
 
-/* Tile */
 .dhc-tile {
   background: radial-gradient(circle at top left, #1e293b, #020617);
   border-radius: 1.25rem;
@@ -187,7 +200,6 @@ body {
   margin-top: 0.8rem;
 }
 
-/* Badges */
 .dhc-badge {
   display: inline-flex;
   align-items: center;
@@ -216,11 +228,10 @@ body {
   border: 1px solid rgba(248, 113, 113, 0.4);
 }
 
-/* Footer */
 .dhc-footer {
   border-top: 1px solid rgba(148, 163, 184, 0.3);
   padding: 0.75rem 1.25rem;
-  background: #0a2494;
+  background: #020617;
 }
 
 .dhc-footer-inner {
@@ -237,6 +248,7 @@ body {
 .dhc-footer-secondary {
   opacity: 0.8;
 }
+
 .dhc-text-section {
   max-width: 720px;
   margin: 2rem auto;
