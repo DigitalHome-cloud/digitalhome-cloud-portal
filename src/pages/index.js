@@ -43,7 +43,7 @@ const generalTiles = [
     title: "Pay Me a Coffee",
     description: "Support the DigitalHome.Cloud project.",
     icon: "☕",
-    url: "https://buymeacoffee.com",
+    url: "https://buymeacoffee.com/dlab5",
     status: "available",
   },
 ];
