@@ -3,17 +3,14 @@ import Layout from "../components/Layout";
 import TileGrid from "../components/TileGrid";
 import { useTranslation } from "gatsby-plugin-react-i18next";
 import { graphql } from "gatsby";
+import { useAuth } from "../context/AuthContext";
 
 const IndexPage = () => {
   const { t } = useTranslation();
+  const { groups } = useAuth();
 
-  const user = {
-    isAuthenticated: false,
-    groups: [],
-  };
-
-  const hasDesignAccess = user.groups.includes("dhc-users");
-  const hasOperateAccess = user.groups.includes("dhc-operators");
+  const hasDesignAccess = groups.includes("dhc-users");
+  const hasOperateAccess = groups.includes("dhc-operators");
 
   const generalTiles = [
     {
@@ -36,16 +33,16 @@ const IndexPage = () => {
       id: "signup",
       title: t("tile.signup.title"),
       description: t("tile.signup.desc"),
-      icon: "🧑‍💻",
-      url: "/signup",
-      status: "available",
+      icon: "🧾",
+      url: "#",
+      status: "coming-soon",
     },
     {
       id: "coffee",
       title: t("tile.coffee.title"),
       description: t("tile.coffee.desc"),
       icon: "☕",
-      url: "https://buymeacoffee.com/dlab5",
+      url: "#",
       status: "available",
     },
   ];
@@ -55,8 +52,16 @@ const IndexPage = () => {
       id: "design-demo",
       title: t("tile.design.demo.title"),
       description: t("tile.design.demo.desc"),
-      icon: "🏗️",
-      url: "https://designer.digitalhome.cloud/demo",
+      icon: "🏠",
+      url: "#",
+      status: "available",
+    },
+    {
+      id: "design-real",
+      title: "SmartHome Designer",
+      description: "Work on your own DigitalHome.Cloud real estates.",
+      icon: "🛠️",
+      url: hasDesignAccess ? "/app/design" : "#",
       status: hasDesignAccess ? "available" : "restricted",
     },
   ];
@@ -66,8 +71,16 @@ const IndexPage = () => {
       id: "operate-demo",
       title: t("tile.operate.demo.title"),
       description: t("tile.operate.demo.desc"),
-      icon: "⚙️",
-      url: "https://operator.digitalhome.cloud/demo",
+      icon: "🎛️",
+      url: "#",
+      status: "available",
+    },
+    {
+      id: "operate-real",
+      title: "SmartHome Operator",
+      description: "Monitor and operate real installations.",
+      icon: "📡",
+      url: hasOperateAccess ? "/app/operate" : "#",
       status: hasOperateAccess ? "available" : "restricted",
     },
   ];
@@ -75,22 +88,17 @@ const IndexPage = () => {
   return (
     <Layout>
       <main className="dhc-main">
-        <section className="dhc-hero">
-          <h1 className="dhc-hero-title">{t("app.title")}</h1>
-          <p className="dhc-hero-subtitle">{t("app.subtitle")}</p>
-        </section>
-
-        <section className="dhc-tiles-section">
+        <section className="dhc-section">
           <h2 className="dhc-section-title">{t("section.general")}</h2>
           <TileGrid tiles={generalTiles} />
         </section>
 
-        <section className="dhc-tiles-section">
+        <section className="dhc-section">
           <h2 className="dhc-section-title">{t("section.design")}</h2>
           <TileGrid tiles={designTiles} />
         </section>
 
-        <section className="dhc-tiles-section">
+        <section className="dhc-section">
           <h2 className="dhc-section-title">{t("section.operate")}</h2>
           <TileGrid tiles={operateTiles} />
         </section>
