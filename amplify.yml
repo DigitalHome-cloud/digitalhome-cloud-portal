@@ -3,20 +3,12 @@ frontend:
   phases:
     preBuild:
       commands:
-        # Install Amplify CLI (frontend is Gen2, backend is separate Gen1 app)
+        - echo "Node version:" && node -v
+        - echo "NPM version:" && npm -v
+        # Install Amplify CLI (or use a pinned version)
         - npm install -g @aws-amplify/cli
-        # Pull backend config (aws-exports.js etc.) for this app/env
-        # NOTE: Replace appId/envName with your backend Amplify app + environment if needed
-        - amplify pull \
-            --appId d2p2oom7uhzz43 \
-            --envName main \
-            --yes \
-            --frontend javascript \
-            --amplify "{{\"envName\":\"main\"}}" \
-            --providers "{}" \
-            --no-override
-        # Install frontend dependencies
-        - npm install
+        # Install dependencies
+        - npm ci || npm install
     build:
       commands:
         - npm run build

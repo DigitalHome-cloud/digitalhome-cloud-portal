@@ -42,7 +42,7 @@ const IndexPage = () => {
       title: t("tile.coffee.title"),
       description: t("tile.coffee.desc"),
       icon: "☕",
-      url: "#",
+      url: "https://buymeacoffee.com/dlab5",
       status: "available",
     },
   ];
