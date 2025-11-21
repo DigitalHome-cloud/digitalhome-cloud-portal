@@ -26,13 +26,24 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     let isMounted = true;
 
+    // During SSR, there is no window and we don't want to call Amplify Auth.
+    // Treat SSR render as DEMO mode; the client will rehydrate and run
+    // the real auth check in the browser.
+    if (typeof window === "undefined") {
+      setAuthState("demo");
+      return () => {
+        isMounted = false;
+      };
+    }
+
     const loadUser = async () => {
       try {
         const current = await getCurrentUser();
         const session = await fetchAuthSession();
 
         const idToken = session?.tokens?.idToken;
-        const cognitoGroups = idToken?.payload?.["cognito:groups"] || [];
+        const cognitoGroups =
+          idToken?.payload?.["cognito:groups"] || [];
 
         if (!isMounted) return;
 
