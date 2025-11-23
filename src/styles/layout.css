@@ -33,7 +33,7 @@ html {
   line-height: var(--line-height-normal);
   overflow-y: scroll;
 }
-body {
+/* body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
   color: var(--color-text);
@@ -42,7 +42,7 @@ body {
   font-weight: normal;
   margin: 0;
   word-wrap: break-word;
-}
+} */
 a {
   background-color: transparent;
   color: var(--color-primary);

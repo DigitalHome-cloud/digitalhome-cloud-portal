@@ -10,4 +10,6 @@ export { default as CommentCreateForm } from "./CommentCreateForm";
 export { default as CommentUpdateForm } from "./CommentUpdateForm";
 export { default as PostCreateForm } from "./PostCreateForm";
 export { default as PostUpdateForm } from "./PostUpdateForm";
+export { default as UserProfileCreateForm } from "./UserProfileCreateForm";
+export { default as UserProfileUpdateForm } from "./UserProfileUpdateForm";
 export { default as studioTheme } from "./studioTheme";

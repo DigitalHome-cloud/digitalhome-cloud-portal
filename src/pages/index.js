@@ -7,45 +7,76 @@ import { useAuth } from "../context/AuthContext";
 
 const IndexPage = () => {
   const { t } = useTranslation();
-  const { groups } = useAuth();
+  const { groups, isAuthenticated, user} = useAuth();
 
   const hasDesignAccess = groups.includes("dhc-users");
   const hasOperateAccess = groups.includes("dhc-operators");
 
-  const generalTiles = [
-    {
-      id: "about",
-      title: t("tile.about.title"),
-      description: t("tile.about.desc"),
-      icon: "ℹ️",
-      url: "/about",
-      status: "available",
-    },
-    {
-      id: "signin",
-      title: t("tile.signin.title"),
-      description: t("tile.signin.desc"),
-      icon: "🔐",
-      url: "/signin",
-      status: "available",
-    },
-    {
-      id: "signup",
-      title: t("tile.signup.title"),
-      description: t("tile.signup.desc"),
-      icon: "🧾",
-      url: "#",
-      status: "coming-soon",
-    },
-    {
-      id: "coffee",
-      title: t("tile.coffee.title"),
-      description: t("tile.coffee.desc"),
-      icon: "☕",
-      url: "https://buymeacoffee.com/dlab5",
-      status: "available",
-    },
-  ];
+  // Try to get a nice display name for the signed-in user
+  console.log(user)
+  const username =
+    user?.email ||
+    user?.username ||
+    user?.signInDetails?.loginId ||
+    t("tile.signin.defaultName", { defaultValue: "there" });
+
+  const aboutTile = {
+    id: "about",
+    title: t("tile.about.title"),
+    description: t("tile.about.desc"),
+    icon: "ℹ️",
+    url: "/about",
+    status: "available",
+  };
+
+  // When NOT signed in → classic "Sign in / Sign up" tile with closed lock.
+  // When signed in → becomes an "account" tile with open lock and greeting.
+  const signinTile = isAuthenticated
+    ? {
+        id: "account",
+        title: t("tile.signin.signedInTitle", {
+          name: username,
+          defaultValue: `Hi ${username}`,
+        }),
+        description: t("tile.signin.signedInDesc", {
+          defaultValue: "Manage your account or sign out.",
+        }),
+        icon: "🔓", // open lock
+        url: "/userprofile",
+        status: "available",
+      }
+    : {
+        id: "signin",
+        title: t("tile.signin.title"),
+        description: t("tile.signin.desc"),
+        icon: "🔐", // closed lock
+        url: "/signin",
+        status: "available",
+      };
+
+  // Former "signup" tile → now a placeholder for a future blog.
+  const blogTile = {
+    id: "blog",
+    title: t("tile.blog.title", { defaultValue: "Blog (coming soon)" }),
+    description: t("tile.blog.desc", {
+      defaultValue:
+        "Stories, guides, and updates about DigitalHome.Cloud — coming soon.",
+    }),
+    icon: "📝",
+    url: "#",
+    status: "coming-soon",
+  };
+
+  const coffeeTile = {
+    id: "coffee",
+    title: t("tile.coffee.title"),
+    description: t("tile.coffee.desc"),
+    icon: "☕",
+    url: "https://buymeacoffee.com/dlab5",
+    status: "available",
+  };
+
+  const generalTiles = [aboutTile, signinTile, blogTile, coffeeTile];
 
   const designTiles = [
     {
