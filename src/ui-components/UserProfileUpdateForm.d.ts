@@ -5,7 +5,7 @@
  **************************************************************************/
 
 import * as React from "react";
-import { GridProps, SwitchFieldProps, TextFieldProps } from "@aws-amplify/ui-react";
+import { GridProps, SelectFieldProps, SwitchFieldProps, TextFieldProps } from "@aws-amplify/ui-react";
 export declare type EscapeHatchProps = {
     [elementHierarchy: string]: Record<string, unknown>;
 } | null;
@@ -27,8 +27,6 @@ export declare type UserProfileUpdateFormInputValues = {
     email?: string;
     locale?: string;
     marketingOptIn?: boolean;
-    createdAt?: string;
-    updatedAt?: string;
 };
 export declare type UserProfileUpdateFormValidationValues = {
     owner?: ValidationFunction<string>;
@@ -36,8 +34,6 @@ export declare type UserProfileUpdateFormValidationValues = {
     email?: ValidationFunction<string>;
     locale?: ValidationFunction<string>;
     marketingOptIn?: ValidationFunction<boolean>;
-    createdAt?: ValidationFunction<string>;
-    updatedAt?: ValidationFunction<string>;
 };
 export declare type PrimitiveOverrideProps<T> = Partial<T> & React.DOMAttributes<HTMLDivElement>;
 export declare type UserProfileUpdateFormOverridesProps = {
@@ -45,10 +41,8 @@ export declare type UserProfileUpdateFormOverridesProps = {
     owner?: PrimitiveOverrideProps<TextFieldProps>;
     displayName?: PrimitiveOverrideProps<TextFieldProps>;
     email?: PrimitiveOverrideProps<TextFieldProps>;
-    locale?: PrimitiveOverrideProps<TextFieldProps>;
+    locale?: PrimitiveOverrideProps<SelectFieldProps>;
     marketingOptIn?: PrimitiveOverrideProps<SwitchFieldProps>;
-    createdAt?: PrimitiveOverrideProps<TextFieldProps>;
-    updatedAt?: PrimitiveOverrideProps<TextFieldProps>;
 } & EscapeHatchProps;
 export declare type UserProfileUpdateFormProps = React.PropsWithChildren<{
     overrides?: UserProfileUpdateFormOverridesProps | undefined | null;

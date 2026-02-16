@@ -39,28 +39,12 @@ const awsmobile = {
   aws_cognito_username_attributes: ["EMAIL"],
   aws_cognito_mfa_configuration: "OFF",
   aws_cognito_mfa_types: ["SMS"],
-  aws_cognito_password_protection_settings: {"passwordPolicyMinLength":8,"passwordPolicyCharacters":["REQUIRES_LOWERCASE","REQUIRES_NUMBERS","REQUIRES_SYMBOLS","REQUIRES_UPPERCASE"]},
-  aws_cognito_signup_attributes: [],
+  aws_cognito_password_protection_settings: {"passwordPolicyMinLength":8,"passwordPolicyCharacters":[]},
+  aws_cognito_signup_attributes: ["EMAIL","NAME"],
   aws_cognito_social_providers: getSocialProviders(),
   aws_appsync_graphqlEndpoint: process.env.GATSBY_APPSYNC_ENDPOINT,
   aws_appsync_region: process.env.GATSBY_AWS_REGION,
   aws_appsync_authenticationType: process.env.GATSBY_APPSYNC_AUTH_TYPE || "AMAZON_COGNITO_USER_POOLS",
-  geo: {
-    "amazon_location_service": {
-      "region": "eu-central-1",
-      "maps": {
-        "items": {
-          "digitalHomeCloud-main": {
-            "style": "VectorEsriStreets"
-          },
-          "digitalHomeCloudDemo-main": {
-            "style": "VectorEsriStreets"
-          }
-        },
-        "default": "digitalHomeCloudDemo-main"
-      }
-    }
-  },
   aws_user_files_s3_bucket: "digitalhome-cloudec099-main",
   aws_user_files_s3_bucket_region: "eu-central-1",
 };

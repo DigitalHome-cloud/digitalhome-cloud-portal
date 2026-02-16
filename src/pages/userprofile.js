@@ -1,5 +1,5 @@
 import * as React from "react";
-import Layout from "../components/layout";
+import Layout from "../components/Layout";
 import { useTranslation } from "gatsby-plugin-react-i18next";
 import { graphql, navigate } from "gatsby";
 import { useAuth } from "../context/AuthContext";

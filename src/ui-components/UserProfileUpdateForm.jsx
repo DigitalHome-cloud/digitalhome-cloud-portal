@@ -10,6 +10,7 @@ import {
   Button,
   Flex,
   Grid,
+  SelectField,
   SwitchField,
   TextField,
 } from "@aws-amplify/ui-react";
@@ -36,8 +37,6 @@ export default function UserProfileUpdateForm(props) {
     email: "",
     locale: "",
     marketingOptIn: false,
-    createdAt: "",
-    updatedAt: "",
   };
   const [owner, setOwner] = React.useState(initialValues.owner);
   const [displayName, setDisplayName] = React.useState(
@@ -48,8 +47,6 @@ export default function UserProfileUpdateForm(props) {
   const [marketingOptIn, setMarketingOptIn] = React.useState(
     initialValues.marketingOptIn
   );
-  const [createdAt, setCreatedAt] = React.useState(initialValues.createdAt);
-  const [updatedAt, setUpdatedAt] = React.useState(initialValues.updatedAt);
   const [errors, setErrors] = React.useState({});
   const resetStateValues = () => {
     const cleanValues = userProfileRecord
@@ -60,8 +57,6 @@ export default function UserProfileUpdateForm(props) {
     setEmail(cleanValues.email);
     setLocale(cleanValues.locale);
     setMarketingOptIn(cleanValues.marketingOptIn);
-    setCreatedAt(cleanValues.createdAt);
-    setUpdatedAt(cleanValues.updatedAt);
     setErrors({});
   };
   const [userProfileRecord, setUserProfileRecord] =
@@ -82,13 +77,11 @@ export default function UserProfileUpdateForm(props) {
   }, [idProp, userProfileModelProp]);
   React.useEffect(resetStateValues, [userProfileRecord]);
   const validations = {
-    owner: [{ type: "Required" }],
+    owner: [],
     displayName: [],
     email: [{ type: "Email" }],
     locale: [],
     marketingOptIn: [],
-    createdAt: [],
-    updatedAt: [],
   };
   const runValidationTasks = async (
     fieldName,
@@ -107,23 +100,6 @@ export default function UserProfileUpdateForm(props) {
     setErrors((errors) => ({ ...errors, [fieldName]: validationResponse }));
     return validationResponse;
   };
-  const convertToLocal = (date) => {
-    const df = new Intl.DateTimeFormat("default", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      calendar: "iso8601",
-      numberingSystem: "latn",
-      hourCycle: "h23",
-    });
-    const parts = df.formatToParts(date).reduce((acc, part) => {
-      acc[part.type] = part.value;
-      return acc;
-    }, {});
-    return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
-  };
   return (
     <Grid
       as="form"
@@ -133,13 +109,11 @@ export default function UserProfileUpdateForm(props) {
       onSubmit={async (event) => {
         event.preventDefault();
         let modelFields = {
-          owner,
+          owner: owner ?? null,
           displayName: displayName ?? null,
           email: email ?? null,
           locale: locale ?? null,
           marketingOptIn: marketingOptIn ?? null,
-          createdAt: createdAt ?? null,
-          updatedAt: updatedAt ?? null,
         };
         const validationResponses = await Promise.all(
           Object.keys(validations).reduce((promises, fieldName) => {
@@ -193,7 +167,7 @@ export default function UserProfileUpdateForm(props) {
     >
       <TextField
         label="Owner"
-        isRequired={true}
+        isRequired={false}
         isReadOnly={false}
         value={owner}
         onChange={(e) => {
@@ -205,8 +179,6 @@ export default function UserProfileUpdateForm(props) {
               email,
               locale,
               marketingOptIn,
-              createdAt,
-              updatedAt,
             };
             const result = onChange(modelFields);
             value = result?.owner ?? value;
@@ -235,8 +207,6 @@ export default function UserProfileUpdateForm(props) {
               email,
               locale,
               marketingOptIn,
-              createdAt,
-              updatedAt,
             };
             const result = onChange(modelFields);
             value = result?.displayName ?? value;
@@ -265,8 +235,6 @@ export default function UserProfileUpdateForm(props) {
               email: value,
               locale,
               marketingOptIn,
-              createdAt,
-              updatedAt,
             };
             const result = onChange(modelFields);
             value = result?.email ?? value;
@@ -281,10 +249,10 @@ export default function UserProfileUpdateForm(props) {
         hasError={errors.email?.hasError}
         {...getOverrideProps(overrides, "email")}
       ></TextField>
-      <TextField
+      <SelectField
         label="Locale"
-        isRequired={false}
-        isReadOnly={false}
+        placeholder="Please select an option"
+        isDisabled={false}
         value={locale}
         onChange={(e) => {
           let { value } = e.target;
@@ -295,8 +263,6 @@ export default function UserProfileUpdateForm(props) {
               email,
               locale: value,
               marketingOptIn,
-              createdAt,
-              updatedAt,
             };
             const result = onChange(modelFields);
             value = result?.locale ?? value;
@@ -310,7 +276,23 @@ export default function UserProfileUpdateForm(props) {
         errorMessage={errors.locale?.errorMessage}
         hasError={errors.locale?.hasError}
         {...getOverrideProps(overrides, "locale")}
-      ></TextField>
+      >
+        <option
+          children="En"
+          value="EN"
+          {...getOverrideProps(overrides, "localeoption0")}
+        ></option>
+        <option
+          children="Fr"
+          value="FR"
+          {...getOverrideProps(overrides, "localeoption1")}
+        ></option>
+        <option
+          children="De"
+          value="DE"
+          {...getOverrideProps(overrides, "localeoption2")}
+        ></option>
+      </SelectField>
       <SwitchField
         label="Marketing opt in"
         defaultChecked={false}
@@ -325,8 +307,6 @@ export default function UserProfileUpdateForm(props) {
               email,
               locale,
               marketingOptIn: value,
-              createdAt,
-              updatedAt,
             };
             const result = onChange(modelFields);
             value = result?.marketingOptIn ?? value;
@@ -341,70 +321,6 @@ export default function UserProfileUpdateForm(props) {
         hasError={errors.marketingOptIn?.hasError}
         {...getOverrideProps(overrides, "marketingOptIn")}
       ></SwitchField>
-      <TextField
-        label="Created at"
-        isRequired={false}
-        isReadOnly={false}
-        type="datetime-local"
-        value={createdAt && convertToLocal(new Date(createdAt))}
-        onChange={(e) => {
-          let value =
-            e.target.value === "" ? "" : new Date(e.target.value).toISOString();
-          if (onChange) {
-            const modelFields = {
-              owner,
-              displayName,
-              email,
-              locale,
-              marketingOptIn,
-              createdAt: value,
-              updatedAt,
-            };
-            const result = onChange(modelFields);
-            value = result?.createdAt ?? value;
-          }
-          if (errors.createdAt?.hasError) {
-            runValidationTasks("createdAt", value);
-          }
-          setCreatedAt(value);
-        }}
-        onBlur={() => runValidationTasks("createdAt", createdAt)}
-        errorMessage={errors.createdAt?.errorMessage}
-        hasError={errors.createdAt?.hasError}
-        {...getOverrideProps(overrides, "createdAt")}
-      ></TextField>
-      <TextField
-        label="Updated at"
-        isRequired={false}
-        isReadOnly={false}
-        type="datetime-local"
-        value={updatedAt && convertToLocal(new Date(updatedAt))}
-        onChange={(e) => {
-          let value =
-            e.target.value === "" ? "" : new Date(e.target.value).toISOString();
-          if (onChange) {
-            const modelFields = {
-              owner,
-              displayName,
-              email,
-              locale,
-              marketingOptIn,
-              createdAt,
-              updatedAt: value,
-            };
-            const result = onChange(modelFields);
-            value = result?.updatedAt ?? value;
-          }
-          if (errors.updatedAt?.hasError) {
-            runValidationTasks("updatedAt", value);
-          }
-          setUpdatedAt(value);
-        }}
-        onBlur={() => runValidationTasks("updatedAt", updatedAt)}
-        errorMessage={errors.updatedAt?.errorMessage}
-        hasError={errors.updatedAt?.hasError}
-        {...getOverrideProps(overrides, "updatedAt")}
-      ></TextField>
       <Flex
         justifyContent="space-between"
         {...getOverrideProps(overrides, "CTAFlex")}
