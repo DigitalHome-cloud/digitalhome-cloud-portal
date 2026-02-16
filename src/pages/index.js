@@ -13,11 +13,10 @@ const IndexPage = () => {
   const hasOperateAccess = groups.includes("dhc-operators");
 
   // Try to get a nice display name for the signed-in user
-  console.log(user)
   const username =
-    user?.email ||
+    user?.idTokenPayload?.name ||
+    user?.idTokenPayload?.email ||
     user?.username ||
-    user?.signInDetails?.loginId ||
     t("tile.signin.defaultName", { defaultValue: "there" });
 
   const aboutTile = {
@@ -63,8 +62,8 @@ const IndexPage = () => {
         "Stories, guides, and updates about DigitalHome.Cloud — coming soon.",
     }),
     icon: "📝",
-    url: "#",
-    status: "coming-soon",
+    url: "/blog",
+    status: "available",
   };
 
   const coffeeTile = {

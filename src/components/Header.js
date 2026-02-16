@@ -56,7 +56,10 @@ const Header = () => {
             {isAuthenticated && (
               <>
                 <span className="dhc-nav-pill dhc-nav-pill--ok">
-                  {user?.username || "Signed in"}
+                  {user?.idTokenPayload?.name ||
+                    user?.idTokenPayload?.email ||
+                    user?.username ||
+                    "Signed in"}
                 </span>
                 <button
                   type="button"

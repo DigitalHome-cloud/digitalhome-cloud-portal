@@ -70,5 +70,10 @@
   },
   "footer": {
     "tagline": "La nature rencontre la technologie – DigitalHome.Cloud"
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Histoires, guides et actualités autour de DigitalHome.Cloud.",
+    "backToList": "← Retour au blog"
   }
 }

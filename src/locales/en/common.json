@@ -32,5 +32,8 @@
   "about.oss.body": "All core components of the platform are open source under the DigitalHome-cloud GitHub organization. Community contributions, ideas, and collaborations are encouraged to help create a future where smart homes are accessible, sustainable, and user-friendly.",
   "about.dlab.title": "Powered by D-LAB-5",
   "about.dlab.body": "D-LAB-5 is a family-led innovation initiative combining engineering, sustainable architecture, design, and nature-inspired problem solving. DigitalHome.Cloud is one of the first projects built under this umbrella.",
-  "footer.tagline": "Nature meets technology – DigitalHome.Cloud"
+  "footer.tagline": "Nature meets technology – DigitalHome.Cloud",
+  "blog.title": "Blog",
+  "blog.subtitle": "Stories, guides, and updates about DigitalHome.Cloud.",
+  "blog.backToList": "← Back to blog"
 }

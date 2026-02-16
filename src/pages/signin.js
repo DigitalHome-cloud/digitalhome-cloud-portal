@@ -73,7 +73,7 @@ const SignInPage = () => {
                   <SyncAuth user={user} />
                   <p>
                     {user
-                      ? `Signed in as ${user.username}`
+                      ? `Signed in as ${user.signInDetails?.loginId || user.username}`
                       : "Complete the form to sign in."}
                   </p>
                   {user && (
