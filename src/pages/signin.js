@@ -32,6 +32,23 @@ const myTheme = {
 };
 
 
+/**
+ * Helper rendered inside <Authenticator> to sync sign-in back to AuthContext.
+ * When the Authenticator reports a signed-in user, we call reloadSession()
+ * so the rest of the app (header, tiles, etc.) updates immediately.
+ */
+const SyncAuth = ({ user }) => {
+  const { reloadSession } = useAuth();
+
+  React.useEffect(() => {
+    if (user) {
+      reloadSession();
+    }
+  }, [user, reloadSession]);
+
+  return null;
+};
+
 const SignInPage = () => {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
@@ -53,6 +70,7 @@ const SignInPage = () => {
             <Authenticator>
               {({ signOut, user }) => (
                 <div>
+                  <SyncAuth user={user} />
                   <p>
                     {user
                       ? `Signed in as ${user.username}`
