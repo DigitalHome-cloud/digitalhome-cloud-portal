@@ -115,7 +115,8 @@ The DigitalHome.Cloud platform spans multiple repos sharing one Amplify Gen1 bac
 | Portal | `digitalhome-cloud-portal` | 8000 | `portal.digitalhome.cloud` |
 | Designer | `digitalhome-cloud-designer` | 8001 | `designer.digitalhome.cloud` |
 | Modeler | `digitalhome-cloud-modeler` | 8002 | `modeler.digitalhome.cloud` |
-| Semantic Core | `digitalhome-cloud-semantic-core` | — | RDF/OWL ontology repo |
+
+The semantic-core ontology files (TTL, JSON-LD context, SHACL shapes) live inside the modeler repo under `semantic-core/`.
 
 **The portal owns the Amplify backend** (`amplify/` folder). Other repos are frontend-only consumers — they use `amplify pull` + the same `generate-aws-config-from-master.js` script to get config, and share the same `GATSBY_*` env vars.
 

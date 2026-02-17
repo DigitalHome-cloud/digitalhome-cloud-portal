@@ -80,8 +80,7 @@ S3 (Semantic Core & Instance Models)
 GitHub (DigitalHome-cloud organization) hosts:
 - Portal
 - Designer (SmartHome Designer)
-- Modeler (3D ontology viewer)
-- Semantic Core
+- Modeler (3D ontology viewer + semantic-core ontology files)
 - Documentation
 
 ---
