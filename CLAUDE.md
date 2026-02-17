@@ -85,6 +85,27 @@ Three demo SmartHomes are always available: `DE-DEMO`, `FR-DEMO`, `BE-DEMO`. The
 
 The context exposes: `smartHomes`, `activeHome`, `setActiveHome(id)`, `isDemo`, `demoHomes`, `userHomes`.
 
+### Authentication Resilience
+
+`AuthContext` calls `getCurrentUser()` before `fetchAuthSession()`. This ensures that if the Cognito Identity Pool is misconfigured (e.g. wrong region in `GATSBY_IDENTITY_POOL_ID`), authentication still works — the user stays authenticated and only group/token-payload data may be missing. The Identity Pool is only needed for direct AWS credential access (S3, etc.), not for User Pool auth.
+
+**Known issue**: If `GATSBY_IDENTITY_POOL_ID` in Amplify Console has a region prefix like `central-1` instead of `eu-central-1`, the Identity Pool endpoint will fail with `ERR_NAME_NOT_RESOLVED`. The code handles this gracefully, but fix the env var for full functionality.
+
+## Dependencies & Licenses
+
+All dependencies are open source. Key libraries:
+
+| Package | License | Notes |
+|---------|---------|-------|
+| react, react-dom | MIT | UI framework |
+| gatsby | MIT | Static site generator |
+| aws-amplify | Apache-2.0 | AWS Amplify JS SDK v6 |
+| @aws-amplify/ui-react | Apache-2.0 | Pre-built auth UI components |
+| i18next, react-i18next | MIT | Internationalization |
+| gatsby-plugin-react-i18next | MIT | Gatsby i18n integration |
+
+No copyleft (GPL/LGPL/AGPL) dependencies. Apache-2.0 requires preserving copyright notices and license text in distributions but has no source-sharing obligations. MIT has no obligations beyond including the license.
+
 ## Multi-Repo Ecosystem
 
 The DigitalHome.Cloud platform spans multiple repos sharing one Amplify Gen1 backend:
