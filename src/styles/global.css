@@ -88,6 +88,41 @@ body {
   white-space: nowrap;
 }
 
+.dhc-home-selector {
+  padding: 0 0.75rem;
+  border-left: 1px solid rgba(148, 163, 184, 0.25);
+  border-right: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.dhc-home-select {
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(148, 163, 184, 0.1);
+  color: #e5e7eb;
+  cursor: pointer;
+  outline: none;
+  appearance: auto;
+}
+
+.dhc-home-select:hover {
+  border-color: rgba(148, 163, 184, 0.7);
+  background: rgba(148, 163, 184, 0.18);
+}
+
+.dhc-home-select:focus {
+  border-color: #0ea5e9;
+}
+
+.dhc-home-select option,
+.dhc-home-select optgroup {
+  background: #1e293b;
+  color: #e5e7eb;
+}
+
 .dhc-nav-link {
   font-size: 0.85rem;
   color: #cbd5f5;

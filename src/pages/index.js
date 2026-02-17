@@ -4,10 +4,12 @@ import TileGrid from "../components/TileGrid";
 import { useTranslation } from "gatsby-plugin-react-i18next";
 import { graphql } from "gatsby";
 import { useAuth } from "../context/AuthContext";
+import { useSmartHome } from "../context/SmartHomeContext";
 
 const IndexPage = () => {
   const { t } = useTranslation();
   const { groups, isAuthenticated, user} = useAuth();
+  const { activeHome } = useSmartHome();
 
   const hasDesignAccess = groups.includes("dhc-users");
   const hasOperateAccess = groups.includes("dhc-operators");
@@ -77,13 +79,16 @@ const IndexPage = () => {
 
   const generalTiles = [aboutTile, signinTile, blogTile, coffeeTile];
 
+  const designerBase = process.env.GATSBY_DESIGNER_URL || "https://designer.digitalhome.cloud";
+  const designerUrl = `${designerBase}?home=${encodeURIComponent(activeHome.id)}`;
+
   const designTiles = [
     {
       id: "design-demo",
       title: t("tile.design.demo.title"),
       description: t("tile.design.demo.desc"),
       icon: "🏠",
-      url: "#",
+      url: designerUrl,
       status: "available",
     },
     {
@@ -91,7 +96,7 @@ const IndexPage = () => {
       title: "SmartHome Designer",
       description: "Work on your own DigitalHome.Cloud real estates.",
       icon: "🛠️",
-      url: hasDesignAccess ? "/app/design" : "#",
+      url: hasDesignAccess ? designerUrl : "#",
       status: hasDesignAccess ? "available" : "restricted",
     },
   ];
@@ -102,7 +107,7 @@ const IndexPage = () => {
       title: t("tile.operate.demo.title"),
       description: t("tile.operate.demo.desc"),
       icon: "🎛️",
-      url: "#",
+      url: `#operate?home=${encodeURIComponent(activeHome.id)}`,
       status: "available",
     },
     {
@@ -110,7 +115,7 @@ const IndexPage = () => {
       title: "SmartHome Operator",
       description: "Monitor and operate real installations.",
       icon: "📡",
-      url: hasOperateAccess ? "/app/operate" : "#",
+      url: hasOperateAccess ? `#operate?home=${encodeURIComponent(activeHome.id)}` : "#",
       status: hasOperateAccess ? "available" : "restricted",
     },
   ];

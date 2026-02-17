@@ -77,6 +77,33 @@ Three languages: `en` (default), `de`, `fr`. Translation files live in `src/loca
 
 Plain CSS in `src/styles/global.css` and `src/styles/layout.css`. Dark-mode theme with a slate/blue palette. No CSS framework.
 
+### SmartHome Context
+
+`SmartHomeContext` (`src/context/SmartHomeContext.js`) manages the active SmartHome selection. SmartHome IDs are the top-level tenant/partition key across the entire platform (like a SAP client). Format: `{country}-{zip}-{street3letter}{housenumber}-{nn}` (e.g. `DE-80331-MAR12-01`).
+
+Three demo SmartHomes are always available: `DE-DEMO`, `FR-DEMO`, `BE-DEMO`. The active selection is persisted to `localStorage`. When the backend SmartHome model is added, user-linked homes will be fetched via GraphQL.
+
+The context exposes: `smartHomes`, `activeHome`, `setActiveHome(id)`, `isDemo`, `demoHomes`, `userHomes`.
+
+## Multi-Repo Ecosystem
+
+The DigitalHome.Cloud platform spans multiple repos sharing one Amplify Gen1 backend:
+
+| App | Repo | Port | URL |
+|-----|------|------|-----|
+| Portal | `digitalhome-cloud-portal` | 8000 | `portal.digitalhome.cloud` |
+| Designer | `digitalhome-cloud-designer` | 8001 | `designer.digitalhome.cloud` |
+| Modeler | `digitalhome-cloud-modeler` | 8002 | `modeler.digitalhome.cloud` |
+| Semantic Core | `digitalhome-cloud-semantic-core` | — | RDF/OWL ontology repo |
+
+**The portal owns the Amplify backend** (`amplify/` folder). Other repos are frontend-only consumers — they use `amplify pull` + the same `generate-aws-config-from-master.js` script to get config, and share the same `GATSBY_*` env vars.
+
+Cross-app navigation uses env-var-driven URLs: `GATSBY_DESIGNER_URL` defaults to `https://designer.digitalhome.cloud` in production, overridden to `http://localhost:8001` in `.env.development`. The SmartHome ID is passed via `?home=` query parameter.
+
+All repos use `stage` branch for staging work before merging to `main`.
+
+**Files that must never be committed (all repos):** `src/aws-exports.js`, `.env.development`.
+
 ## Deployment
 
 Amplify Hosting with branch-to-environment mapping:

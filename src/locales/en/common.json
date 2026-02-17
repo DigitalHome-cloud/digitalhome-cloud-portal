@@ -35,5 +35,8 @@
   "footer.tagline": "Nature meets technology – DigitalHome.Cloud",
   "blog.title": "Blog",
   "blog.subtitle": "Stories, guides, and updates about DigitalHome.Cloud.",
-  "blog.backToList": "← Back to blog"
+  "blog.backToList": "← Back to blog",
+  "smarthome.label": "SmartHome",
+  "smarthome.demoGroup": "Demo",
+  "smarthome.yourHomes": "Your SmartHomes"
 }

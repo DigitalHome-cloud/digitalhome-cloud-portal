@@ -75,5 +75,10 @@
     "title": "Blog",
     "subtitle": "Histoires, guides et actualités autour de DigitalHome.Cloud.",
     "backToList": "← Retour au blog"
+  },
+  "smarthome": {
+    "label": "SmartHome",
+    "demoGroup": "Démo",
+    "yourHomes": "Vos SmartHomes"
   }
 }

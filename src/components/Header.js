@@ -2,11 +2,14 @@ import * as React from "react";
 import { Link } from "gatsby";
 import { useTranslation, useI18next } from "gatsby-plugin-react-i18next";
 import { useAuth } from "../context/AuthContext";
+import { useSmartHome } from "../context/SmartHomeContext";
 
 const Header = () => {
   const { t } = useTranslation();
   const { languages, language, changeLanguage } = useI18next();
   const { authState, isAuthenticated, user, signOut } = useAuth();
+  const { smartHomes, demoHomes, userHomes, activeHome, setActiveHome } =
+    useSmartHome();
 
   const handleSignOut = async () => {
     await signOut();
@@ -41,6 +44,33 @@ const Header = () => {
               {t("nav.github")}
             </a>
          </div>
+
+          {/* SmartHome selector */}
+          <div className="dhc-home-selector">
+            <select
+              className="dhc-home-select"
+              value={activeHome.id}
+              onChange={(e) => setActiveHome(e.target.value)}
+              aria-label={t("smarthome.label")}
+            >
+              <optgroup label={t("smarthome.demoGroup")}>
+                {demoHomes.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.id}
+                  </option>
+                ))}
+              </optgroup>
+              {userHomes.length > 0 && (
+                <optgroup label={t("smarthome.yourHomes")}>
+                  {userHomes.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.id}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          </div>
 
           <div className="dhc-nav-group dhc-nav-auth">
             {/* Auth status / actions */}
