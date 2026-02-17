@@ -3,8 +3,12 @@ frontend:
   phases:
     preBuild:
       commands:
-        - node -v
-        - npm install
+        - echo "Node version:" && node -v
+        - echo "NPM version:" && npm -v
+        # Install Amplify CLI (or use a pinned version)
+        - npm install -g @aws-amplify/cli
+        # Install dependencies
+        - npm ci || npm install
     build:
       commands:
         - npm run build

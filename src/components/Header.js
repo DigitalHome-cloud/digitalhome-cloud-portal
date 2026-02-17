@@ -1,10 +1,20 @@
 import * as React from "react";
 import { Link } from "gatsby";
 import { useTranslation, useI18next } from "gatsby-plugin-react-i18next";
+import { useAuth } from "../context/AuthContext";
+import { useSmartHome } from "../context/SmartHomeContext";
 
 const Header = () => {
   const { t } = useTranslation();
   const { languages, language, changeLanguage } = useI18next();
+  const { authState, isAuthenticated, user, signOut } = useAuth();
+  const { smartHomes, demoHomes, userHomes, activeHome, setActiveHome } =
+    useSmartHome();
+
+  const handleSignOut = async () => {
+    await signOut();
+    // Let the AuthProvider re-evaluate state, UI will fall back to DEMO
+  };
 
   return (
     <header className="dhc-header">
@@ -18,36 +28,96 @@ const Header = () => {
         </div>
 
         <nav className="dhc-nav">
-          <Link to="/" className="dhc-nav-link">
-            {t("nav.home")}
-          </Link>
-          <Link to="/about" className="dhc-nav-link">
-            {t("nav.about")}
-          </Link>
-          <a
-            href="https://github.com/DigitalHome-cloud"
-            className="dhc-nav-link"
-            target="_blank"
-            rel="noreferrer"
-          >
-            {t("nav.github")}
-          </a>
+          <div className="dhc-nav-group">
+            <Link to="/" className="dhc-nav-link">
+              {t("nav.home")}
+            </Link>
+            <Link to="/about" className="dhc-nav-link">
+              {t("nav.about")}
+            </Link>
+            <a
+              href="https://github.com/DigitalHome-cloud"
+              target="_blank"
+              rel="noreferrer"
+              className="dhc-nav-link"
+            >
+              {t("nav.github")}
+            </a>
+         </div>
 
-          <div className="dhc-lang-switch">
-            {languages.map((lng) => (
-              <button
-                key={lng}
-                type="button"
-                onClick={() => changeLanguage(lng)}
-                className={
-                  lng === language
-                    ? "dhc-lang-btn dhc-lang-btn--active"
-                    : "dhc-lang-btn"
-                }
-              >
-                {lng.toUpperCase()}
-              </button>
-            ))}
+          {/* SmartHome selector */}
+          <div className="dhc-home-selector">
+            <select
+              className="dhc-home-select"
+              value={activeHome.id}
+              onChange={(e) => setActiveHome(e.target.value)}
+              aria-label={t("smarthome.label")}
+            >
+              <optgroup label={t("smarthome.demoGroup")}>
+                {demoHomes.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.id}
+                  </option>
+                ))}
+              </optgroup>
+              {userHomes.length > 0 && (
+                <optgroup label={t("smarthome.yourHomes")}>
+                  {userHomes.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.id}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          </div>
+
+          <div className="dhc-nav-group dhc-nav-auth">
+            {/* Auth status / actions */}
+            {authState === "demo" && (
+              <>
+                <span className="dhc-nav-pill">DEMO</span>
+                <Link to="/signin" className="dhc-nav-link">
+                  {t("tile.signin.title")}
+                </Link>
+              </>
+            )}
+
+            {isAuthenticated && (
+              <>
+                <span className="dhc-nav-pill dhc-nav-pill--ok">
+                  {user?.idTokenPayload?.name ||
+                    user?.idTokenPayload?.email ||
+                    user?.username ||
+                    "Signed in"}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="dhc-nav-link dhc-nav-link-button"
+                >
+                  Sign out
+                </button>
+              </>
+            )}
+
+            {/* Language switcher */}
+            <div className="dhc-lang-switch">
+              {languages.map((lng) => (
+                <button
+                  key={lng}
+                  type="button"
+                  onClick={() => changeLanguage(lng)}
+                  className={
+                    language === lng
+                      ? "dhc-lang-btn dhc-lang-btn--active"
+                      : "dhc-lang-btn"
+                  }
+                >
+                  {lng.toUpperCase()}
+                </button>
+              ))}
+            </div>
           </div>
         </nav>
       </div>
