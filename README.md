@@ -118,10 +118,9 @@ The Portal is deployed via **AWS Amplify**, with branch-to-environment mapping:
 
 ## 🧱 Related Repositories
 
-- **digitalhome-cloud-semantic-core** – ontology & SHACL  
-- **digitalhome-cloud-ontology-designer** – Blockly-based ontology tool  
-- **digitalhome-cloud-smarthome-designer** – Digital home instance editor  
-- **digitalhome-cloud-docs** – full platform documentation  
+- **digitalhome-cloud-designer** – SmartHome Designer
+- **digitalhome-cloud-modeler** – 3D ontology viewer (includes semantic-core ontology files)
+- **digitalhome-cloud-docs** – full platform documentation
 
 ---
 
