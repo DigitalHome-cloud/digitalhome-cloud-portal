@@ -52,3 +52,57 @@ export const onDeleteUserProfile = /* GraphQL */ `
     }
   }
 `;
+export const onCreateLibraryItem = /* GraphQL */ `
+  subscription OnCreateLibraryItem(
+    $filter: ModelSubscriptionLibraryItemFilterInput
+  ) {
+    onCreateLibraryItem(filter: $filter) {
+      id
+      title
+      compatibleClasses
+      region
+      standards
+      version
+      description
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onUpdateLibraryItem = /* GraphQL */ `
+  subscription OnUpdateLibraryItem(
+    $filter: ModelSubscriptionLibraryItemFilterInput
+  ) {
+    onUpdateLibraryItem(filter: $filter) {
+      id
+      title
+      compatibleClasses
+      region
+      standards
+      version
+      description
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onDeleteLibraryItem = /* GraphQL */ `
+  subscription OnDeleteLibraryItem(
+    $filter: ModelSubscriptionLibraryItemFilterInput
+  ) {
+    onDeleteLibraryItem(filter: $filter) {
+      id
+      title
+      compatibleClasses
+      region
+      standards
+      version
+      description
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;

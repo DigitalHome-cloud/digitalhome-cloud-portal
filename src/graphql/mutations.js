@@ -55,3 +55,60 @@ export const deleteUserProfile = /* GraphQL */ `
     }
   }
 `;
+export const createLibraryItem = /* GraphQL */ `
+  mutation CreateLibraryItem(
+    $input: CreateLibraryItemInput!
+    $condition: ModelLibraryItemConditionInput
+  ) {
+    createLibraryItem(input: $input, condition: $condition) {
+      id
+      title
+      compatibleClasses
+      region
+      standards
+      version
+      description
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const updateLibraryItem = /* GraphQL */ `
+  mutation UpdateLibraryItem(
+    $input: UpdateLibraryItemInput!
+    $condition: ModelLibraryItemConditionInput
+  ) {
+    updateLibraryItem(input: $input, condition: $condition) {
+      id
+      title
+      compatibleClasses
+      region
+      standards
+      version
+      description
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const deleteLibraryItem = /* GraphQL */ `
+  mutation DeleteLibraryItem(
+    $input: DeleteLibraryItemInput!
+    $condition: ModelLibraryItemConditionInput
+  ) {
+    deleteLibraryItem(input: $input, condition: $condition) {
+      id
+      title
+      compatibleClasses
+      region
+      standards
+      version
+      description
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;

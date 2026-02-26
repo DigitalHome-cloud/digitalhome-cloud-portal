@@ -39,3 +39,43 @@ export const listUserProfiles = /* GraphQL */ `
     }
   }
 `;
+export const getLibraryItem = /* GraphQL */ `
+  query GetLibraryItem($id: ID!) {
+    getLibraryItem(id: $id) {
+      id
+      title
+      compatibleClasses
+      region
+      standards
+      version
+      description
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const listLibraryItems = /* GraphQL */ `
+  query ListLibraryItems(
+    $filter: ModelLibraryItemFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listLibraryItems(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        title
+        compatibleClasses
+        region
+        standards
+        version
+        description
+        createdAt
+        updatedAt
+        __typename
+      }
+      nextToken
+      __typename
+    }
+  }
+`;
