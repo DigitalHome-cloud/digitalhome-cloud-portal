@@ -73,6 +73,11 @@ Three languages: `en` (default), `de`, `fr`. Translation files live in `src/loca
 - `src/graphql/` — Auto-generated queries, mutations, subscriptions (do not hand-edit)
 - `src/ui-components/` — Auto-generated Amplify Studio form components (do not hand-edit)
 
+Key GraphQL types in `amplify/backend/api/digitalhomecloudback/schema.graphql`:
+- `SmartHome` — SmartHome IDs and metadata (owner-based auth)
+- `SmartHomeDesign` — Design versions with edit locking (`lockedBy`, `lockedAt`)
+- `LibraryItem` — Component library with capability flags (`hasActorCapability`, `hasSensorCapability`, `hasControllerCapability`)
+
 ### Styling
 
 Plain CSS in `src/styles/global.css` and `src/styles/layout.css`. Dark-mode theme with a slate/blue palette. No CSS framework.
