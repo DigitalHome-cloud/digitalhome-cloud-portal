@@ -49,6 +49,9 @@ export const getLibraryItem = /* GraphQL */ `
       standards
       version
       description
+      hasActorCapability
+      hasSensorCapability
+      hasControllerCapability
       createdAt
       updatedAt
       __typename
@@ -70,6 +73,99 @@ export const listLibraryItems = /* GraphQL */ `
         standards
         version
         description
+        hasActorCapability
+        hasSensorCapability
+        hasControllerCapability
+        createdAt
+        updatedAt
+        __typename
+      }
+      nextToken
+      __typename
+    }
+  }
+`;
+export const getSmartHome = /* GraphQL */ `
+  query GetSmartHome($id: ID!) {
+    getSmartHome(id: $id) {
+      id
+      owners
+      country
+      zip
+      streetCode
+      houseNumber
+      suffix
+      address
+      description
+      ownerName
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const listSmartHomes = /* GraphQL */ `
+  query ListSmartHomes(
+    $filter: ModelSmartHomeFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listSmartHomes(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        owners
+        country
+        zip
+        streetCode
+        houseNumber
+        suffix
+        address
+        description
+        ownerName
+        createdAt
+        updatedAt
+        __typename
+      }
+      nextToken
+      __typename
+    }
+  }
+`;
+export const getSmartHomeDesign = /* GraphQL */ `
+  query GetSmartHomeDesign($id: ID!) {
+    getSmartHomeDesign(id: $id) {
+      id
+      smartHomeId
+      version
+      lastModified
+      lockedBy
+      lockedAt
+      ontologyVersion
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const listSmartHomeDesigns = /* GraphQL */ `
+  query ListSmartHomeDesigns(
+    $filter: ModelSmartHomeDesignFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listSmartHomeDesigns(
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+    ) {
+      items {
+        id
+        smartHomeId
+        version
+        lastModified
+        lockedBy
+        lockedAt
+        ontologyVersion
         createdAt
         updatedAt
         __typename

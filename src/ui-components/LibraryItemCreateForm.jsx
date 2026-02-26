@@ -14,6 +14,7 @@ import {
   Grid,
   Icon,
   ScrollView,
+  SwitchField,
   Text,
   TextField,
   useTheme,
@@ -195,6 +196,9 @@ export default function LibraryItemCreateForm(props) {
     standards: [],
     version: "",
     description: "",
+    hasActorCapability: false,
+    hasSensorCapability: false,
+    hasControllerCapability: false,
   };
   const [title, setTitle] = React.useState(initialValues.title);
   const [compatibleClasses, setCompatibleClasses] = React.useState(
@@ -206,6 +210,15 @@ export default function LibraryItemCreateForm(props) {
   const [description, setDescription] = React.useState(
     initialValues.description
   );
+  const [hasActorCapability, setHasActorCapability] = React.useState(
+    initialValues.hasActorCapability
+  );
+  const [hasSensorCapability, setHasSensorCapability] = React.useState(
+    initialValues.hasSensorCapability
+  );
+  const [hasControllerCapability, setHasControllerCapability] = React.useState(
+    initialValues.hasControllerCapability
+  );
   const [errors, setErrors] = React.useState({});
   const resetStateValues = () => {
     setTitle(initialValues.title);
@@ -216,6 +229,9 @@ export default function LibraryItemCreateForm(props) {
     setCurrentStandardsValue("");
     setVersion(initialValues.version);
     setDescription(initialValues.description);
+    setHasActorCapability(initialValues.hasActorCapability);
+    setHasSensorCapability(initialValues.hasSensorCapability);
+    setHasControllerCapability(initialValues.hasControllerCapability);
     setErrors({});
   };
   const [currentCompatibleClassesValue, setCurrentCompatibleClassesValue] =
@@ -230,6 +246,9 @@ export default function LibraryItemCreateForm(props) {
     standards: [],
     version: [{ type: "Required" }],
     description: [],
+    hasActorCapability: [],
+    hasSensorCapability: [],
+    hasControllerCapability: [],
   };
   const runValidationTasks = async (
     fieldName,
@@ -263,6 +282,9 @@ export default function LibraryItemCreateForm(props) {
           standards,
           version,
           description,
+          hasActorCapability,
+          hasSensorCapability,
+          hasControllerCapability,
         };
         const validationResponses = await Promise.all(
           Object.keys(validations).reduce((promises, fieldName) => {
@@ -331,6 +353,9 @@ export default function LibraryItemCreateForm(props) {
               standards,
               version,
               description,
+              hasActorCapability,
+              hasSensorCapability,
+              hasControllerCapability,
             };
             const result = onChange(modelFields);
             value = result?.title ?? value;
@@ -356,6 +381,9 @@ export default function LibraryItemCreateForm(props) {
               standards,
               version,
               description,
+              hasActorCapability,
+              hasSensorCapability,
+              hasControllerCapability,
             };
             const result = onChange(modelFields);
             values = result?.compatibleClasses ?? values;
@@ -418,6 +446,9 @@ export default function LibraryItemCreateForm(props) {
               standards,
               version,
               description,
+              hasActorCapability,
+              hasSensorCapability,
+              hasControllerCapability,
             };
             const result = onChange(modelFields);
             value = result?.region ?? value;
@@ -443,6 +474,9 @@ export default function LibraryItemCreateForm(props) {
               standards: values,
               version,
               description,
+              hasActorCapability,
+              hasSensorCapability,
+              hasControllerCapability,
             };
             const result = onChange(modelFields);
             values = result?.standards ?? values;
@@ -497,6 +531,9 @@ export default function LibraryItemCreateForm(props) {
               standards,
               version: value,
               description,
+              hasActorCapability,
+              hasSensorCapability,
+              hasControllerCapability,
             };
             const result = onChange(modelFields);
             value = result?.version ?? value;
@@ -526,6 +563,9 @@ export default function LibraryItemCreateForm(props) {
               standards,
               version,
               description: value,
+              hasActorCapability,
+              hasSensorCapability,
+              hasControllerCapability,
             };
             const result = onChange(modelFields);
             value = result?.description ?? value;
@@ -540,6 +580,108 @@ export default function LibraryItemCreateForm(props) {
         hasError={errors.description?.hasError}
         {...getOverrideProps(overrides, "description")}
       ></TextField>
+      <SwitchField
+        label="Has actor capability"
+        defaultChecked={false}
+        isDisabled={false}
+        isChecked={hasActorCapability}
+        onChange={(e) => {
+          let value = e.target.checked;
+          if (onChange) {
+            const modelFields = {
+              title,
+              compatibleClasses,
+              region,
+              standards,
+              version,
+              description,
+              hasActorCapability: value,
+              hasSensorCapability,
+              hasControllerCapability,
+            };
+            const result = onChange(modelFields);
+            value = result?.hasActorCapability ?? value;
+          }
+          if (errors.hasActorCapability?.hasError) {
+            runValidationTasks("hasActorCapability", value);
+          }
+          setHasActorCapability(value);
+        }}
+        onBlur={() =>
+          runValidationTasks("hasActorCapability", hasActorCapability)
+        }
+        errorMessage={errors.hasActorCapability?.errorMessage}
+        hasError={errors.hasActorCapability?.hasError}
+        {...getOverrideProps(overrides, "hasActorCapability")}
+      ></SwitchField>
+      <SwitchField
+        label="Has sensor capability"
+        defaultChecked={false}
+        isDisabled={false}
+        isChecked={hasSensorCapability}
+        onChange={(e) => {
+          let value = e.target.checked;
+          if (onChange) {
+            const modelFields = {
+              title,
+              compatibleClasses,
+              region,
+              standards,
+              version,
+              description,
+              hasActorCapability,
+              hasSensorCapability: value,
+              hasControllerCapability,
+            };
+            const result = onChange(modelFields);
+            value = result?.hasSensorCapability ?? value;
+          }
+          if (errors.hasSensorCapability?.hasError) {
+            runValidationTasks("hasSensorCapability", value);
+          }
+          setHasSensorCapability(value);
+        }}
+        onBlur={() =>
+          runValidationTasks("hasSensorCapability", hasSensorCapability)
+        }
+        errorMessage={errors.hasSensorCapability?.errorMessage}
+        hasError={errors.hasSensorCapability?.hasError}
+        {...getOverrideProps(overrides, "hasSensorCapability")}
+      ></SwitchField>
+      <SwitchField
+        label="Has controller capability"
+        defaultChecked={false}
+        isDisabled={false}
+        isChecked={hasControllerCapability}
+        onChange={(e) => {
+          let value = e.target.checked;
+          if (onChange) {
+            const modelFields = {
+              title,
+              compatibleClasses,
+              region,
+              standards,
+              version,
+              description,
+              hasActorCapability,
+              hasSensorCapability,
+              hasControllerCapability: value,
+            };
+            const result = onChange(modelFields);
+            value = result?.hasControllerCapability ?? value;
+          }
+          if (errors.hasControllerCapability?.hasError) {
+            runValidationTasks("hasControllerCapability", value);
+          }
+          setHasControllerCapability(value);
+        }}
+        onBlur={() =>
+          runValidationTasks("hasControllerCapability", hasControllerCapability)
+        }
+        errorMessage={errors.hasControllerCapability?.errorMessage}
+        hasError={errors.hasControllerCapability?.hasError}
+        {...getOverrideProps(overrides, "hasControllerCapability")}
+      ></SwitchField>
       <Flex
         justifyContent="space-between"
         {...getOverrideProps(overrides, "CTAFlex")}

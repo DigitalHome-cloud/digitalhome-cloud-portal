@@ -5,7 +5,7 @@
  **************************************************************************/
 
 import * as React from "react";
-import { GridProps, TextFieldProps } from "@aws-amplify/ui-react";
+import { GridProps, SwitchFieldProps, TextFieldProps } from "@aws-amplify/ui-react";
 export declare type EscapeHatchProps = {
     [elementHierarchy: string]: Record<string, unknown>;
 } | null;
@@ -28,6 +28,9 @@ export declare type LibraryItemUpdateFormInputValues = {
     standards?: string[];
     version?: string;
     description?: string;
+    hasActorCapability?: boolean;
+    hasSensorCapability?: boolean;
+    hasControllerCapability?: boolean;
 };
 export declare type LibraryItemUpdateFormValidationValues = {
     title?: ValidationFunction<string>;
@@ -36,6 +39,9 @@ export declare type LibraryItemUpdateFormValidationValues = {
     standards?: ValidationFunction<string>;
     version?: ValidationFunction<string>;
     description?: ValidationFunction<string>;
+    hasActorCapability?: ValidationFunction<boolean>;
+    hasSensorCapability?: ValidationFunction<boolean>;
+    hasControllerCapability?: ValidationFunction<boolean>;
 };
 export declare type PrimitiveOverrideProps<T> = Partial<T> & React.DOMAttributes<HTMLDivElement>;
 export declare type LibraryItemUpdateFormOverridesProps = {
@@ -46,6 +52,9 @@ export declare type LibraryItemUpdateFormOverridesProps = {
     standards?: PrimitiveOverrideProps<TextFieldProps>;
     version?: PrimitiveOverrideProps<TextFieldProps>;
     description?: PrimitiveOverrideProps<TextFieldProps>;
+    hasActorCapability?: PrimitiveOverrideProps<SwitchFieldProps>;
+    hasSensorCapability?: PrimitiveOverrideProps<SwitchFieldProps>;
+    hasControllerCapability?: PrimitiveOverrideProps<SwitchFieldProps>;
 } & EscapeHatchProps;
 export declare type LibraryItemUpdateFormProps = React.PropsWithChildren<{
     overrides?: LibraryItemUpdateFormOverridesProps | undefined | null;

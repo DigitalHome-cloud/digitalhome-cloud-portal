@@ -68,6 +68,9 @@ export const createLibraryItem = /* GraphQL */ `
       standards
       version
       description
+      hasActorCapability
+      hasSensorCapability
+      hasControllerCapability
       createdAt
       updatedAt
       __typename
@@ -87,6 +90,9 @@ export const updateLibraryItem = /* GraphQL */ `
       standards
       version
       description
+      hasActorCapability
+      hasSensorCapability
+      hasControllerCapability
       createdAt
       updatedAt
       __typename
@@ -106,6 +112,132 @@ export const deleteLibraryItem = /* GraphQL */ `
       standards
       version
       description
+      hasActorCapability
+      hasSensorCapability
+      hasControllerCapability
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const createSmartHome = /* GraphQL */ `
+  mutation CreateSmartHome(
+    $input: CreateSmartHomeInput!
+    $condition: ModelSmartHomeConditionInput
+  ) {
+    createSmartHome(input: $input, condition: $condition) {
+      id
+      owners
+      country
+      zip
+      streetCode
+      houseNumber
+      suffix
+      address
+      description
+      ownerName
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const updateSmartHome = /* GraphQL */ `
+  mutation UpdateSmartHome(
+    $input: UpdateSmartHomeInput!
+    $condition: ModelSmartHomeConditionInput
+  ) {
+    updateSmartHome(input: $input, condition: $condition) {
+      id
+      owners
+      country
+      zip
+      streetCode
+      houseNumber
+      suffix
+      address
+      description
+      ownerName
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const deleteSmartHome = /* GraphQL */ `
+  mutation DeleteSmartHome(
+    $input: DeleteSmartHomeInput!
+    $condition: ModelSmartHomeConditionInput
+  ) {
+    deleteSmartHome(input: $input, condition: $condition) {
+      id
+      owners
+      country
+      zip
+      streetCode
+      houseNumber
+      suffix
+      address
+      description
+      ownerName
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const createSmartHomeDesign = /* GraphQL */ `
+  mutation CreateSmartHomeDesign(
+    $input: CreateSmartHomeDesignInput!
+    $condition: ModelSmartHomeDesignConditionInput
+  ) {
+    createSmartHomeDesign(input: $input, condition: $condition) {
+      id
+      smartHomeId
+      version
+      lastModified
+      lockedBy
+      lockedAt
+      ontologyVersion
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const updateSmartHomeDesign = /* GraphQL */ `
+  mutation UpdateSmartHomeDesign(
+    $input: UpdateSmartHomeDesignInput!
+    $condition: ModelSmartHomeDesignConditionInput
+  ) {
+    updateSmartHomeDesign(input: $input, condition: $condition) {
+      id
+      smartHomeId
+      version
+      lastModified
+      lockedBy
+      lockedAt
+      ontologyVersion
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const deleteSmartHomeDesign = /* GraphQL */ `
+  mutation DeleteSmartHomeDesign(
+    $input: DeleteSmartHomeDesignInput!
+    $condition: ModelSmartHomeDesignConditionInput
+  ) {
+    deleteSmartHomeDesign(input: $input, condition: $condition) {
+      id
+      smartHomeId
+      version
+      lastModified
+      lockedBy
+      lockedAt
+      ontologyVersion
       createdAt
       updatedAt
       __typename

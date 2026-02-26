@@ -64,6 +64,9 @@ export const onCreateLibraryItem = /* GraphQL */ `
       standards
       version
       description
+      hasActorCapability
+      hasSensorCapability
+      hasControllerCapability
       createdAt
       updatedAt
       __typename
@@ -82,6 +85,9 @@ export const onUpdateLibraryItem = /* GraphQL */ `
       standards
       version
       description
+      hasActorCapability
+      hasSensorCapability
+      hasControllerCapability
       createdAt
       updatedAt
       __typename
@@ -100,6 +106,126 @@ export const onDeleteLibraryItem = /* GraphQL */ `
       standards
       version
       description
+      hasActorCapability
+      hasSensorCapability
+      hasControllerCapability
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onCreateSmartHome = /* GraphQL */ `
+  subscription OnCreateSmartHome(
+    $filter: ModelSubscriptionSmartHomeFilterInput
+  ) {
+    onCreateSmartHome(filter: $filter) {
+      id
+      owners
+      country
+      zip
+      streetCode
+      houseNumber
+      suffix
+      address
+      description
+      ownerName
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onUpdateSmartHome = /* GraphQL */ `
+  subscription OnUpdateSmartHome(
+    $filter: ModelSubscriptionSmartHomeFilterInput
+  ) {
+    onUpdateSmartHome(filter: $filter) {
+      id
+      owners
+      country
+      zip
+      streetCode
+      houseNumber
+      suffix
+      address
+      description
+      ownerName
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onDeleteSmartHome = /* GraphQL */ `
+  subscription OnDeleteSmartHome(
+    $filter: ModelSubscriptionSmartHomeFilterInput
+  ) {
+    onDeleteSmartHome(filter: $filter) {
+      id
+      owners
+      country
+      zip
+      streetCode
+      houseNumber
+      suffix
+      address
+      description
+      ownerName
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onCreateSmartHomeDesign = /* GraphQL */ `
+  subscription OnCreateSmartHomeDesign(
+    $filter: ModelSubscriptionSmartHomeDesignFilterInput
+  ) {
+    onCreateSmartHomeDesign(filter: $filter) {
+      id
+      smartHomeId
+      version
+      lastModified
+      lockedBy
+      lockedAt
+      ontologyVersion
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onUpdateSmartHomeDesign = /* GraphQL */ `
+  subscription OnUpdateSmartHomeDesign(
+    $filter: ModelSubscriptionSmartHomeDesignFilterInput
+  ) {
+    onUpdateSmartHomeDesign(filter: $filter) {
+      id
+      smartHomeId
+      version
+      lastModified
+      lockedBy
+      lockedAt
+      ontologyVersion
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onDeleteSmartHomeDesign = /* GraphQL */ `
+  subscription OnDeleteSmartHomeDesign(
+    $filter: ModelSubscriptionSmartHomeDesignFilterInput
+  ) {
+    onDeleteSmartHomeDesign(filter: $filter) {
+      id
+      smartHomeId
+      version
+      lastModified
+      lockedBy
+      lockedAt
+      ontologyVersion
       createdAt
       updatedAt
       __typename
