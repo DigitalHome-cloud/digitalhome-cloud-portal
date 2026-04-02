@@ -5,6 +5,7 @@ import { useTranslation } from "gatsby-plugin-react-i18next";
 import { graphql } from "gatsby";
 import { useAuth } from "../context/AuthContext";
 import { useSmartHome } from "../context/SmartHomeContext";
+import { getAppUrl } from "../utils/getAppUrl";
 
 const IndexPage = () => {
   const { t } = useTranslation();
@@ -79,8 +80,7 @@ const IndexPage = () => {
 
   const generalTiles = [aboutTile, signinTile, blogTile, coffeeTile];
 
-  const designerBase = process.env.GATSBY_DESIGNER_URL || "https://designer.digitalhome.cloud";
-  const designerUrl = `${designerBase}?home=${encodeURIComponent(activeHome.id)}`;
+  const designerUrl = `${getAppUrl("designer")}?home=${encodeURIComponent(activeHome.id)}`;
 
   const designTiles = [
     {
