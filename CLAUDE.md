@@ -17,7 +17,15 @@ DigitalHome.Cloud Portal — a Gatsby 5 / React 18 web app serving as the launch
 
 ## Local Dev Setup
 
-After `amplify pull` generates `src/aws-exports.js` (hardcoded values, gitignored), run:
+The `amplify/` folder and `src/aws-exports.js` are **symlinks** to the umbrella repo (`digitalhome-cloud-darkfactory`). Setup is handled centrally:
+
+```bash
+# From the umbrella repo root:
+amplify pull                    # once, creates amplify/ + src/aws-exports.js at umbrella level
+./scripts/sync-env.sh           # symlinks into each repo, generates .env.development, runs amplify codegen
+```
+
+If working standalone (without the umbrella), run `amplify pull` here directly, then:
 
 ```bash
 node scripts/generate-aws-config-from-master.js
@@ -29,7 +37,7 @@ This produces two files:
 
 Gatsby automatically loads `.env.development` during `yarn develop` — no manual sourcing needed. In Amplify Hosting, the same `GATSBY_*` env vars are configured in the Amplify console, so `aws-exports.deployment.js` works in both environments.
 
-**Files that must never be committed:** `src/aws-exports.js`, `.env.development` (both gitignored).
+**Files that must never be committed:** `src/aws-exports.js`, `.env.development`, `amplify/` (all gitignored or symlinked).
 
 ## Architecture
 
@@ -123,7 +131,7 @@ The DigitalHome.Cloud platform spans multiple repos sharing one Amplify Gen1 bac
 
 The semantic-core ontology files (TTL, JSON-LD context, SHACL shapes) live inside the modeler repo under `semantic-core/`.
 
-**The portal owns the Amplify backend** (`amplify/` folder). Other repos are frontend-only consumers — they use `amplify pull` + the same `generate-aws-config-from-master.js` script to get config, and share the same `GATSBY_*` env vars.
+**The umbrella repo owns the single `amplify/` directory**, symlinked into each app repo by `scripts/sync-env.sh`. Other repos are frontend-only consumers sharing the same `aws-exports.deployment.js` pattern and `GATSBY_*` env vars.
 
 Cross-app navigation uses env-var-driven URLs: `GATSBY_DESIGNER_URL` defaults to `https://designer.digitalhome.cloud` in production, overridden to `http://localhost:8001` in `.env.development`. The SmartHome ID is passed via `?home=` query parameter.
 

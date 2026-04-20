@@ -1,5 +1,15 @@
 const path = require("path");
 
+exports.onCreateWebpackConfig = ({ actions }) => {
+  actions.setWebpackConfig({
+    resolve: {
+      alias: {
+        "@dhc/shared": path.resolve(__dirname, "../shared"),
+      },
+    },
+  });
+};
+
 exports.onCreateNode = ({ node, actions, getNode }) => {
   const { createNodeField } = actions;
 

@@ -6,14 +6,17 @@ import { graphql } from "gatsby";
 import { useAuth } from "../context/AuthContext";
 import { useSmartHome } from "../context/SmartHomeContext";
 import { getAppUrl } from "../utils/getAppUrl";
+import { useTier } from "@dhc/shared/useTier";
 
 const IndexPage = () => {
   const { t } = useTranslation();
-  const { groups, isAuthenticated, user} = useAuth();
+  const auth = useAuth();
+  const { isAuthenticated, user } = auth;
   const { activeHome } = useSmartHome();
+  const { tier, can } = useTier(auth);
 
-  const hasDesignAccess = groups.includes("dhc-users");
-  const hasOperateAccess = groups.includes("dhc-operators");
+  const hasDesignAccess = can("design.electrical").allowed;
+  const hasOperateAccess = false; // operate module not yet implemented
 
   // Try to get a nice display name for the signed-in user
   const username =
@@ -91,14 +94,19 @@ const IndexPage = () => {
       url: designerUrl,
       status: "available",
     },
-    {
-      id: "design-real",
-      title: "SmartHome Designer",
-      description: "Work on your own DigitalHome.Cloud real estates.",
-      icon: "🛠️",
-      url: hasDesignAccess ? designerUrl : "#",
-      status: hasDesignAccess ? "available" : "restricted",
-    },
+    (() => {
+      const result = can("design.electrical");
+      return {
+        id: "design-real",
+        title: "SmartHome Designer",
+        description: "Work on your own DigitalHome.Cloud real estates.",
+        icon: "🛠️",
+        url: result.allowed ? designerUrl : "#",
+        status: result.allowed ? "available" : "restricted",
+        requiredTier: result.requiredTier,
+        currentTier: tier,
+      };
+    })(),
   ];
 
   const operateTiles = [
@@ -115,8 +123,8 @@ const IndexPage = () => {
       title: "SmartHome Operator",
       description: "Monitor and operate real installations.",
       icon: "📡",
-      url: hasOperateAccess ? `#operate?home=${encodeURIComponent(activeHome.id)}` : "#",
-      status: hasOperateAccess ? "available" : "restricted",
+      url: "#",
+      status: "coming-soon",
     },
   ];
 
