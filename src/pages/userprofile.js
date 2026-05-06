@@ -252,7 +252,7 @@ const UserProfilePage = () => {
               <div className="dhc-profile-actions">
                 <button
                   type="submit"
-                  className="dhc-btn dhc-btn-primary"
+                  className="dhc-button-base dhc-button-primary"
                   disabled={saving}
                 >
                   {saving
@@ -263,7 +263,7 @@ const UserProfilePage = () => {
                 <button
                   type="button"
                   onClick={handleCheckout}
-                  className="dhc-btn dhc-button-secondary"
+                  className="dhc-button-base dhc-button-secondary"
                 >
                   {t("userprofile.checkout", { defaultValue: "Checkout" })}
                 </button>
@@ -272,7 +272,7 @@ const UserProfilePage = () => {
                   <button
                     type="button"
                     onClick={handleDelete}
-                    className="dhc-btn dhc-button-danger"
+                    className="dhc-button-base dhc-button-danger"
                     disabled={deleting}
                   >
                     {deleting

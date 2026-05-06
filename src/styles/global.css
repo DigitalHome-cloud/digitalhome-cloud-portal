@@ -22,7 +22,7 @@ body {
 }
 
 .dhc-header-inner {
-  max-width: 1120px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 0.75rem 1.25rem;
   display: flex;
@@ -39,14 +39,15 @@ body {
 .dhc-logo-mark {
   width: 32px;
   height: 32px;
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   background: linear-gradient(135deg, #22c55e, #0ea5e9);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.9rem;
-  color: #0b1120;
+  font-size: 0.6rem;
+  letter-spacing: 0.01em;
+  color: #fff;
 }
 
 .dhc-logo-text {
@@ -186,7 +187,7 @@ body {
 }
 
 .dhc-main {
-  max-width: 1120px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 2rem 1.25rem 3rem;
 }
@@ -197,7 +198,7 @@ body {
 
 /* TODO color */
 .dhc-hero-title {
-  font-size: 2.2rem;
+  font-size: 2.25rem;
   font-weight: 700;
   margin: 0 0 0.5rem;
 }
@@ -338,7 +339,7 @@ body {
 }
 
 .dhc-footer-inner {
-  max-width: 1120px;
+  max-width: 1280px;
   margin: 0 auto;
   display: flex;
   gap: 0.75rem;
@@ -441,7 +442,7 @@ body {
   margin-top: 1.5rem;
 }
 
-.dhc-btn {
+.dhc-button-base {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -457,18 +458,18 @@ body {
     border-color 0.15s;
 }
 
-.dhc-btn:disabled {
+.dhc-button-base:disabled {
   opacity: 0.5;
   cursor: default;
 }
 
-.dhc-btn-primary {
+.dhc-button-primary {
   background: linear-gradient(135deg, #22c55e, #0ea5e9);
   color: #ffffff;
   font-weight: 600;
 }
 
-.dhc-btn-primary:hover:not(:disabled) {
+.dhc-button-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, #16a34a, #0284c7);
 }
 
@@ -481,6 +482,17 @@ body {
 .dhc-button-secondary:hover:not(:disabled) {
   border-color: rgba(148, 163, 184, 0.7);
   background: rgba(148, 163, 184, 0.2);
+}
+
+.dhc-button-ghost {
+  background: transparent;
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+.dhc-button-ghost:hover:not(:disabled) {
+  border-color: rgba(148, 163, 184, 0.7);
+  background: rgba(148, 163, 184, 0.08);
 }
 
 .dhc-button-danger {

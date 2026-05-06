@@ -14,6 +14,14 @@ export const wrapRootElement = ({ element }) => (
   </AuthProvider>
 );
 
-export const onRenderBody = ({ setHtmlAttributes }) => {
+export const onRenderBody = ({ setHtmlAttributes, setHeadComponents }) => {
   setHtmlAttributes({ lang: "en" });
+  setHeadComponents([
+    <link
+      key="favicon-svg"
+      rel="icon"
+      type="image/svg+xml"
+      href="/favicon.svg"
+    />,
+  ]);
 };
