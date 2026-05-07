@@ -84,3 +84,31 @@ type SmartHomeDesign @model @auth(rules: [
   lockedAt: AWSDateTime
   ontologyVersion: String
 }
+
+# ─── Multi-owner-safe S3 access ──────────────────────────────────────────
+# The dhcDesignStorageProxy Lambda (DH-SPEC-203) verifies the caller is in
+# SmartHomeDesign.owners or the dhc-admins group, then returns a 5-min
+# pre-signed S3 URL pointing at tenant/{smartHomeId}/{fileName}.
+
+type DesignStorageUrl {
+  url: String!
+  expiresAt: AWSDateTime!
+  contentType: String
+}
+
+type Mutation {
+  requestDesignReadUrl(
+    smartHomeId: ID!
+    fileName: String!
+  ): DesignStorageUrl
+    @function(name: "dhcDesignStorageProxy-${env}")
+    @auth(rules: [{ allow: private }])
+
+  requestDesignWriteUrl(
+    smartHomeId: ID!
+    fileName: String!
+    contentType: String
+  ): DesignStorageUrl
+    @function(name: "dhcDesignStorageProxy-${env}")
+    @auth(rules: [{ allow: private }])
+}
