@@ -6,7 +6,7 @@ import { graphql } from "gatsby";
 import { useAuth } from "../context/AuthContext";
 import { useSmartHome } from "../context/SmartHomeContext";
 import { getAppUrl } from "../utils/getAppUrl";
-import { useTier } from "@dhc/shared/useTier";
+import { useTier } from "../utils/useTier";
 
 const IndexPage = () => {
   const { t } = useTranslation();

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useTranslation } from "gatsby-plugin-react-i18next";
-import { UpgradePrompt } from "@dhc/shared/components/UpgradePrompt";
+import { UpgradePrompt } from "./UpgradePrompt";
 
 const TIER_LABELS = {
   guest: "Guest",
