@@ -1,0 +1,86 @@
+# Global auth fallback — applies to any @model that doesn't specify its own @auth.
+# Currently kept at "public" because the API was provisioned with public/API_KEY as
+# an auxiliary auth provider; switching to "private" requires re-provisioning the
+# API auth modes. Every @model below has its own explicit @auth, so the global
+# rule is a no-op in practice today. Treat as a footgun: any new @model added
+# without explicit @auth gets unauthenticated read+write. Mitigation: a CI check
+# that fails the build if a new @model lands without an @auth directive.
+input AMPLIFY { globalAuthRule: AuthRule = { allow: public } }
+
+enum LOCALE {
+  EN
+  FR
+  DE
+}
+
+# UserProfile: one row per signed-in user. Owner can read+write their own profile;
+# admins can read for support purposes.
+# Was: { allow: private } (any signed-in user could read/edit any profile — PII leak).
+type UserProfile @model @auth(rules: [
+  { allow: owner, operations: [create, update, delete, read] },
+  { allow: groups, groups: ["dhc-admins"], operations: [read] }
+]) {
+  id: ID!
+  owner: String
+  displayName: String
+  email: AWSEmail
+  locale: LOCALE
+  marketingOptIn: Boolean
+}
+
+# LibraryItem: shared component catalog. Admins manage; any signed-in user reads.
+# (Unchanged — already correctly scoped.)
+type LibraryItem @model @auth(rules: [
+  { allow: groups, groups: ["dhc-admins"], operations: [create, update, delete] },
+  { allow: private, operations: [read] }
+]) {
+  id: ID!
+  title: String!
+  compatibleClasses: [String!]!
+  region: String
+  standards: [String]
+  version: String!
+  description: String
+  hasActorCapability: Boolean
+  hasSensorCapability: Boolean
+  hasControllerCapability: Boolean
+}
+
+# SmartHome: tenant data. Only owners and admins can read or modify.
+# Was: included { allow: private, operations: [read] } — let any signed-in user list
+# every tenant's full street address. Removed.
+type SmartHome @model @auth(rules: [
+  { allow: owner, ownerField: "owners", operations: [create, update, delete, read] },
+  { allow: groups, groups: ["dhc-admins"], operations: [create, update, delete, read] }
+]) {
+  id: ID!
+  owners: [String]
+  country: String!
+  zip: String!
+  streetCode: String!
+  houseNumber: String!
+  suffix: String!
+  address: String
+  description: String
+  ownerName: String
+}
+
+# SmartHomeDesign: tenant design data. The `owners` array should mirror the parent
+# SmartHome's `owners` — application code must populate this field on create and
+# keep it in sync on update. Existing rows with empty `owners` will become
+# inaccessible after deploy; back-fill from the parent SmartHome before pushing.
+# Was: { allow: private } — any signed-in user could read/modify/delete any tenant's
+# entire design (Blockly workspace, electrical layout, automations).
+type SmartHomeDesign @model @auth(rules: [
+  { allow: owner, ownerField: "owners", operations: [create, update, delete, read] },
+  { allow: groups, groups: ["dhc-admins"], operations: [create, update, delete, read] }
+]) {
+  id: ID!
+  smartHomeId: String!
+  owners: [String]
+  version: Int!
+  lastModified: AWSDateTime!
+  lockedBy: String
+  lockedAt: AWSDateTime
+  ontologyVersion: String
+}
