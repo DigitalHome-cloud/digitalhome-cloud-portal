@@ -1,12 +1,12 @@
 import React from "react";
 import { Amplify } from "aws-amplify";
-import awsExports from "./src/aws-exports.deployment";
+import outputs from "./src/amplify_outputs.json";
 import { AuthProvider } from "./src/context/AuthContext";
 import { SmartHomeProvider } from "./src/context/SmartHomeContext";
 
-// Configure Amplify with the same backend config for SSR.
-// AuthProvider is written to be SSR-safe and won't call browser APIs on the server.
-Amplify.configure(awsExports);
+// Configure Amplify Gen 2 for SSR. AuthProvider is SSR-safe and won't call
+// browser APIs on the server.
+Amplify.configure(outputs);
 
 export const wrapRootElement = ({ element }) => (
   <AuthProvider>
