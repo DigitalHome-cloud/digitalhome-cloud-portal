@@ -77,3 +77,4 @@ yarn-error.log
 # references these paths)
 src/aws-exports.js
 src/aws-exports.deployment.js
+.graphqlconfig.yml
