@@ -17,12 +17,12 @@ DigitalHome.Cloud Portal — a Gatsby 5 / React 18 web app serving as the launch
 
 ## Local Dev Setup
 
-This app is a **frontend-only consumer**. The Amplify Gen 2 backend lives in the umbrella repo (`digitalhome-cloud-darkfactory/amplify/`). The connection details (Cognito + AppSync + S3 IDs) are committed to this repo as `src/amplify_outputs.json` and imported in `gatsby-browser.js` / `gatsby-ssr.js`.
+This app is a **frontend-only consumer**. The Amplify Gen 2 backend lives in the `repos/core` submodule (`digitalhome-cloud-darkfactory/repos/core/amplify/`). The connection details (Cognito + AppSync + S3 IDs) are committed to this repo as `src/amplify_outputs.json` and imported in `gatsby-browser.js` / `gatsby-ssr.js`.
 
-After a backend change in the umbrella, copy the regenerated outputs into this repo:
+After a backend change, copy the regenerated outputs into this repo (in CI the build does this via `npx ampx generate outputs`):
 
 ```bash
-cp ~/digitalhomeCloud/digitalhome-cloud-darkfactory/amplify_outputs.json src/
+cp ~/digitalhomeCloud/digitalhome-cloud-darkfactory/repos/core/amplify_outputs.json src/
 ```
 
 Then `yarn develop` (port 8000). For backend authoring see the umbrella's `dhc-amplify-gen2` skill.
@@ -35,7 +35,7 @@ Then `yarn develop` (port 8000). For backend authoring see the umbrella's `dhc-a
 
 ### Backend: AWS Amplify Gen 2
 
-The frontend talks to a Gen 2 backend (defined in TypeScript in the umbrella repo) via Amplify JS v6 (`aws-amplify/auth`, `aws-amplify/api`, `aws-amplify/storage`). Backend resources: Cognito User Pool + Identity Pool, AppSync GraphQL API, DynamoDB tables (UserProfile, LibraryItem, SmartHome, SmartHomeDesign with PITR enabled), S3 storage, plus Lambda functions (`postConfirmation` Cognito trigger, `dhcDesignStorageProxy` for tenant signed-URL access).
+The frontend talks to a Gen 2 backend (defined in TypeScript in the `repos/core` submodule) via Amplify JS v6 (`aws-amplify/auth`, `aws-amplify/api`, `aws-amplify/storage`). Backend resources: Cognito User Pool + Identity Pool, AppSync GraphQL API, DynamoDB tables (UserProfile, LibraryItem, SmartHome, SmartHomeDesign with PITR enabled), S3 storage, plus Lambda functions (`postConfirmation` Cognito trigger, `dhcDesignStorageProxy` for tenant signed-URL access).
 
 Amplify is initialized in `gatsby-browser.js` (and SSR mirror) via:
 ```js
@@ -49,7 +49,7 @@ Amplify.configure(outputs);
 - `authState`: `"loading"` | `"demo"` | `"authenticated"`
 - `user`, `groups`, `hasGroup(name)`, `signOut()`, `reloadSession()`
 
-Groups come from the Cognito ID token claim `cognito:groups`. The platform groups (defined in the umbrella's `amplify/auth/resource.ts`) are:
+Groups come from the Cognito ID token claim `cognito:groups`. The platform groups (defined in `repos/core/amplify/auth/resource.ts`) are:
 - `dhc-admins` — full admin (Modeler editing, library writes)
 - `dhc-modelers` — Modeler editing access
 - `dhc-professional` — paid Designer tier
@@ -77,10 +77,10 @@ Three languages: `en` (default), `de`, `fr`. Translation files live in `src/loca
 
 ### GraphQL & UI Components
 
-- `src/graphql/` — Generated queries, mutations, subscriptions (regenerate with `npx ampx generate graphql-client-code` from the umbrella; do not hand-edit)
+- `src/graphql/` — Generated queries, mutations, subscriptions (regenerate with `npx ampx generate graphql-client-code` from `repos/core`; do not hand-edit)
 - `src/ui-components/` — Auto-generated Amplify form components (do not hand-edit)
 
-Schema lives in the umbrella's `amplify/data/resource.ts`. Models:
+Schema lives in `repos/core/amplify/data/resource.ts`. Models:
 - `UserProfile` — `allow.owner()` + admin read-only
 - `SmartHome` — `allow.ownersDefinedIn("owners")` (multi-owner) + admin
 - `SmartHomeDesign` — `allow.ownersDefinedIn("owners")` (multi-owner) + admin, edit-locking via `lockedBy` / `lockedAt`
@@ -120,7 +120,7 @@ No copyleft (GPL/LGPL/AGPL) dependencies. Apache-2.0 requires preserving copyrig
 
 ## Multi-Repo Ecosystem
 
-The DigitalHome.Cloud platform spans multiple repos sharing one Amplify Gen 2 backend (defined in the umbrella):
+The DigitalHome.Cloud platform spans multiple repos sharing one Amplify Gen 2 backend (defined in the `repos/core` submodule):
 
 | App | Repo | Port | URL |
 |-----|------|------|-----|
@@ -128,9 +128,9 @@ The DigitalHome.Cloud platform spans multiple repos sharing one Amplify Gen 2 ba
 | Designer | `digitalhome-cloud-designer` | 8001 | `designer.digitalhome.cloud` |
 | Modeler | `digitalhome-cloud-modeler` | 8002 | `modeler.digitalhome.cloud` |
 
-The semantic-core ontology files (TTL, JSON-LD context, SHACL shapes) live in the `core` repo under `src/ontology/`.
+The semantic-core ontology files (TTL, JSON-LD context, SHACL shapes) live in the `core` repo under `schema/`.
 
-**The umbrella repo (`digitalhome-cloud-darkfactory`) owns the `amplify/` directory**. Each app commits its own `src/amplify_outputs.json` (the deploy-stack public IDs). All apps consume the same Cognito User Pool, AppSync API, and S3 bucket.
+**The `repos/core` submodule owns the `amplify/` directory** (the platform's Gen 2 backend). Each app commits its own `src/amplify_outputs.json` (the deploy-stack public IDs). All apps that point at the same stack consume one Cognito User Pool, AppSync API, and S3 bucket.
 
 Cross-app navigation uses env-var-driven URLs: `GATSBY_DESIGNER_URL` defaults to `https://designer.digitalhome.cloud` in production, overridden to `http://localhost:8001` in `.env.development`. The SmartHome ID is passed via `?home=` query parameter.
 
@@ -142,4 +142,4 @@ Amplify Hosting with branch-to-environment mapping:
 - `main` → production (`portal.digitalhome.cloud`)
 - `stage` → staging
 
-Build spec is in `amplify.yml`. The build runs `npm ci && npm run build` and deploys `public/`. Backend deploys (`npx ampx pipeline-deploy`) run from the umbrella repo's Hosting build, not this app's.
+Build spec is in `amplify.yml`. The build runs `npm ci && npm run build` and deploys `public/`. Backend deploys (`npx ampx pipeline-deploy`) run from `repos/core`'s own backend-only Hosting build, not this app's; this app's `preBuild` pulls the deployed config via `npx ampx generate outputs`.
