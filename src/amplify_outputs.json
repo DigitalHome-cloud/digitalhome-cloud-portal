@@ -1,9 +1,9 @@
 {
   "auth": {
-    "user_pool_id": "eu-central-1_QTq7NVm2M",
+    "user_pool_id": "eu-central-1_THCQaPWiv",
     "aws_region": "eu-central-1",
-    "user_pool_client_id": "7vhn58vh3jamv53debn8crnm4k",
-    "identity_pool_id": "eu-central-1:24cd6f7f-efc0-4880-aaf1-1f568221009a",
+    "user_pool_client_id": "3e6bo1t2rdbg9osnnr8uisb6m1",
+    "identity_pool_id": "eu-central-1:e10977ce-1ef6-4d41-8acb-15efb7824093",
     "mfa_methods": [],
     "standard_required_attributes": [
       "email"
@@ -26,18 +26,23 @@
         }
       },
       {
-        "dhc-professional": {
+        "dhc-devops-engineers": {
           "precedence": 2
         }
       },
       {
-        "dhc-standard": {
+        "dhc-professional": {
           "precedence": 3
         }
       },
       {
-        "dhc-welcome": {
+        "dhc-standard": {
           "precedence": 4
+        }
+      },
+      {
+        "dhc-welcome": {
+          "precedence": 5
         }
       }
     ],
@@ -52,7 +57,7 @@
     "unauthenticated_identities_enabled": true
   },
   "data": {
-    "url": "https://4eqtuivn7rggzd32hleoxeycv4.appsync-api.eu-central-1.amazonaws.com/graphql",
+    "url": "https://jjscfn2izfhllgpo673kqvfd4e.appsync-api.eu-central-1.amazonaws.com/graphql",
     "aws_region": "eu-central-1",
     "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
     "authorization_types": [
@@ -294,11 +299,11 @@
             "sortKeyFieldNames": []
           }
         },
-        "SmartHome": {
-          "name": "SmartHome",
+        "DigitalHome": {
+          "name": "DigitalHome",
           "fields": {
-            "id": {
-              "name": "id",
+            "smartHomeId": {
+              "name": "smartHomeId",
               "isArray": false,
               "type": "ID",
               "isRequired": true,
@@ -319,8 +324,8 @@
               "isRequired": true,
               "attributes": []
             },
-            "zip": {
-              "name": "zip",
+            "postalCode": {
+              "name": "postalCode",
               "isArray": false,
               "type": "String",
               "isRequired": true,
@@ -347,25 +352,39 @@
               "isRequired": true,
               "attributes": []
             },
-            "address": {
-              "name": "address",
+            "city": {
+              "name": "city",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "addressLine1": {
+              "name": "addressLine1",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "addressLine2": {
+              "name": "addressLine2",
               "isArray": false,
               "type": "String",
               "isRequired": false,
               "attributes": []
             },
-            "description": {
-              "name": "description",
+            "isDemo": {
+              "name": "isDemo",
               "isArray": false,
-              "type": "String",
-              "isRequired": false,
+              "type": "Boolean",
+              "isRequired": true,
               "attributes": []
             },
-            "ownerName": {
-              "name": "ownerName",
+            "createdBy": {
+              "name": "createdBy",
               "isArray": false,
               "type": "String",
-              "isRequired": false,
+              "isRequired": true,
               "attributes": []
             },
             "createdAt": {
@@ -386,11 +405,19 @@
             }
           },
           "syncable": true,
-          "pluralName": "SmartHomes",
+          "pluralName": "DigitalHomes",
           "attributes": [
             {
               "type": "model",
               "properties": {}
+            },
+            {
+              "type": "key",
+              "properties": {
+                "fields": [
+                  "smartHomeId"
+                ]
+              }
             },
             {
               "type": "auth",
@@ -427,8 +454,8 @@
             }
           ],
           "primaryKeyInfo": {
-            "isCustomPrimaryKey": false,
-            "primaryKeyFieldName": "id",
+            "isCustomPrimaryKey": true,
+            "primaryKeyFieldName": "smartHomeId",
             "sortKeyFieldNames": []
           }
         },
@@ -603,9 +630,92 @@
               "attributes": []
             }
           }
+        },
+        "InitiateDigitalHomePayload": {
+          "name": "InitiateDigitalHomePayload",
+          "fields": {
+            "smartHomeId": {
+              "name": "smartHomeId",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
         }
       },
       "mutations": {
+        "initiateDigitalHome": {
+          "name": "initiateDigitalHome",
+          "isArray": false,
+          "type": {
+            "nonModel": "InitiateDigitalHomePayload"
+          },
+          "isRequired": false,
+          "arguments": {
+            "country": {
+              "name": "country",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "postalCode": {
+              "name": "postalCode",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "streetCode": {
+              "name": "streetCode",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "houseNumber": {
+              "name": "houseNumber",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "suffix": {
+              "name": "suffix",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "city": {
+              "name": "city",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "addressLine1": {
+              "name": "addressLine1",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "addressLine2": {
+              "name": "addressLine2",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "isDemo": {
+              "name": "isDemo",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true
+            }
+          }
+        },
         "requestDesignReadUrl": {
           "name": "requestDesignReadUrl",
           "isArray": false,
@@ -655,17 +765,39 @@
               "isRequired": false
             }
           }
+        },
+        "requestDigitalHomeReadUrl": {
+          "name": "requestDigitalHomeReadUrl",
+          "isArray": false,
+          "type": {
+            "nonModel": "DesignStorageUrl"
+          },
+          "isRequired": false,
+          "arguments": {
+            "smartHomeId": {
+              "name": "smartHomeId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "fileName": {
+              "name": "fileName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            }
+          }
         }
       }
     }
   },
   "storage": {
     "aws_region": "eu-central-1",
-    "bucket_name": "amplify-digitalhomecloudd-dhcstoragebucket676c6b9f-nwmeen76q2dv",
+    "bucket_name": "amplify-d1abchwrql1qxd-st-dhcstoragebucket676c6b9f-i7xgtqgf0yec",
     "buckets": [
       {
         "name": "dhcStorage",
-        "bucket_name": "amplify-digitalhomecloudd-dhcstoragebucket676c6b9f-nwmeen76q2dv",
+        "bucket_name": "amplify-d1abchwrql1qxd-st-dhcstoragebucket676c6b9f-i7xgtqgf0yec",
         "aws_region": "eu-central-1",
         "paths": {
           "public/*": {
