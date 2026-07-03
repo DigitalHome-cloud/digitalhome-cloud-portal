@@ -1,0 +1,541 @@
+import React, { useState, useMemo, useEffect } from "react";
+import { DEVICE_CATEGORIES } from "../constants/deviceTypes";
+import {
+  uploadCatalogueAsset,
+  catalogueAssetPath,
+  fetchCatalogueImageUrl,
+} from "../utils/s3";
+
+/**
+ * Create / view / edit a DeviceModel (catalogue). Reused by DeviceCatalogue
+ * and Inbox Stage-1. `modelNumber` is the identifier → read-only on edit.
+ *
+ * v3: capability checkboxes (Actor/Sensor/Controller/IOT — flat booleans,
+ * mapped via manifest, NOT T-Box); multi-doc + single-image upload to
+ * public/catalogue/devices/<deviceType>/<modelNumber>/{docs,img}; a small
+ * client-generated data-URL `thumbnail` for list views; mode = view | edit
+ * with an in-form toggle.
+ *
+ * Non-rendered schema fields (region, standards, compatibleClasses,
+ * s3SpecsPath) are preserved from `item` on save.
+ */
+const PASSTHROUGH = ["region", "standards", "compatibleClasses", "s3SpecsPath"];
+const CAPS = [
+  ["hasActorCapability", "Actor"],
+  ["hasSensorCapability", "Sensor"],
+  ["hasControllerCapability", "Controller"],
+  ["hasIOTCapability", "IOT (connectable)"],
+];
+const POWER_SOURCES = [
+  ["", "—"],
+  ["FIXED", "Fixed (hard-wired)"],
+  ["SOCKET", "Socket (plug)"],
+  ["BATTERY", "Battery"],
+  ["ACCU", "Accu (rechargeable)"],
+];
+const COMMON_VOLTAGES = ["220", "110", "48", "24", "12", "6", "5", "3.7"];
+const THUMB_MAX = 96;
+
+// Session-only remembered category/deviceType: pre-fills the next add-form so
+// you don't have to re-pick the same Category every time you enter several
+// models in a row. Module-level → persists across mounts but resets on full
+// reload (intentional).
+let lastUsedCategory = null;
+let lastUsedDeviceType = null;
+
+// Downscale an image File → small JPEG data URL (browser-only; called from a
+// change handler, never at SSR).
+function makeThumbnail(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, THUMB_MAX / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const c = document.createElement("canvas");
+      c.width = w;
+      c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      try {
+        resolve(c.toDataURL("image/jpeg", 0.6));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = (e) => {
+      URL.revokeObjectURL(url);
+      reject(e);
+    };
+    img.src = url;
+  });
+}
+
+const DeviceModelForm = ({
+  item,
+  mode = "edit",
+  canEdit = true,
+  onSave,
+  onCancel,
+}) => {
+  const isEdit = !!item?.modelNumber;
+  const [editing, setEditing] = useState(mode !== "view" && canEdit);
+
+  const [modelNumber, setModelNumber] = useState(item?.modelNumber || "");
+  // For an existing item, resolve from its own fields. For a new entry, fall
+  // back to the last-used pair (session memory) before defaulting to the first
+  // category, so consecutive add-flows keep their grouping.
+  const fallbackCat =
+    (lastUsedCategory && DEVICE_CATEGORIES.find((c) => c.id === lastUsedCategory)
+      ? lastUsedCategory
+      : DEVICE_CATEGORIES[0].id);
+  const initialCat =
+    (DEVICE_CATEGORIES.find((c) => c.id === item?.category) ||
+      DEVICE_CATEGORIES.find((c) =>
+        c.subTypes.some((s) => s.label === item?.deviceType)
+      ) ||
+      DEVICE_CATEGORIES.find((c) => c.id === fallbackCat) ||
+      DEVICE_CATEGORIES[0]).id;
+  const initialCatSubTypes = DEVICE_CATEGORIES.find((c) => c.id === initialCat).subTypes;
+  const fallbackDeviceType =
+    (!item?.deviceType &&
+      lastUsedDeviceType &&
+      initialCatSubTypes.some((s) => s.label === lastUsedDeviceType))
+      ? lastUsedDeviceType
+      : null;
+  const [category, setCategory] = useState(initialCat);
+  const [deviceType, setDeviceType] = useState(
+    item?.deviceType || fallbackDeviceType || initialCatSubTypes[0].label
+  );
+  const [brand, setBrand] = useState(item?.brand || "");
+  const [description, setDescription] = useState(item?.description || "");
+  const [caps, setCaps] = useState(() =>
+    Object.fromEntries(CAPS.map(([k]) => [k, !!item?.[k]]))
+  );
+  const [docFiles, setDocFiles] = useState([]); // File[]
+  const [imageFile, setImageFile] = useState(null); // File | null
+  const [thumb, setThumb] = useState(item?.thumbnail || null);
+  // Pre-uploaded image discovered at the canonical catalogue path. Surfaces
+  // images pushed via upload_catalogue_images.py before any DeviceModel row
+  // exists. The path (when found) is also stamped into s3ImgPath on save so
+  // the persisted record reflects the existing object.
+  const [remoteImage, setRemoteImage] = useState(null); // {url, path} | null
+  const trimmedModelNumber = modelNumber.trim();
+  useEffect(() => {
+    let cancelled = false;
+    if (item?.thumbnail || item?.s3ImgPath || imageFile) return undefined;
+    if (!trimmedModelNumber || !deviceType) return undefined;
+    fetchCatalogueImageUrl(deviceType, trimmedModelNumber)
+      .then((hit) => {
+        if (!cancelled) setRemoteImage(hit);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    trimmedModelNumber,
+    deviceType,
+    item?.thumbnail,
+    item?.s3ImgPath,
+    imageFile,
+  ]);
+  const [powerSource, setPowerSource] = useState(item?.powerSource || "");
+  const numStr = (v) => (v == null ? "" : String(v));
+  const [voltageV, setVoltageV] = useState(numStr(item?.voltageV));
+  const [currentA, setCurrentA] = useState(numStr(item?.currentA));
+  const [powerW, setPowerW] = useState(numStr(item?.powerW));
+  const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+
+  const ro = !editing; // read-only (view mode)
+  const subTypes = useMemo(
+    () => DEVICE_CATEGORIES.find((c) => c.id === category)?.subTypes || [],
+    [category]
+  );
+  const canSubmit =
+    !!modelNumber.trim() && !!brand.trim() && !!deviceType && !saving;
+
+  const onImage = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setImageFile(f);
+    try {
+      setThumb(await makeThumbnail(f));
+    } catch {
+      setSubmitError("Could not generate a preview from that image.");
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!canSubmit) return;
+    setSaving(true);
+    setSubmitError(null);
+    try {
+      const mn = modelNumber.trim();
+      let s3DocPath = item?.s3DocPath || null;
+      let s3ImgPath = item?.s3ImgPath || null;
+
+      // Uploads go to the world-readable, admin-write public/catalogue prefix.
+      for (const df of docFiles) {
+        await uploadCatalogueAsset(
+          deviceType,
+          mn,
+          "docs",
+          df.name,
+          df,
+          df.type || "application/octet-stream"
+        );
+        s3DocPath = catalogueAssetPath(deviceType, mn, "docs", "").replace(
+          /\/$/,
+          ""
+        );
+      }
+      if (imageFile) {
+        const ext = (imageFile.name.split(".").pop() || "img").toLowerCase();
+        await uploadCatalogueAsset(
+          deviceType,
+          mn,
+          "img",
+          `cover.${ext}`, // single fixed name → one image (re-upload replaces)
+          imageFile,
+          imageFile.type || "application/octet-stream"
+        );
+        s3ImgPath = catalogueAssetPath(deviceType, mn, "img", "").replace(
+          /\/$/,
+          ""
+        );
+      }
+
+      const passthrough = {};
+      for (const k of PASSTHROUGH)
+        if (item && item[k] != null) passthrough[k] = item[k];
+
+      // No new file picked, no s3ImgPath on the source row, but we did find
+      // a pre-uploaded image at the canonical path → record it on the model.
+      if (!imageFile && !s3ImgPath && remoteImage) {
+        s3ImgPath = catalogueAssetPath(deviceType, mn, "img", "").replace(
+          /\/$/,
+          ""
+        );
+      }
+
+      lastUsedCategory = category;
+      lastUsedDeviceType = deviceType;
+      await onSave({
+        modelNumber: mn,
+        brand: brand.trim(),
+        category,
+        deviceType,
+        description: description.trim() || null,
+        ...caps,
+        powerSource: powerSource || null,
+        voltageV: voltageV === "" ? null : Number(voltageV),
+        currentA: currentA === "" ? null : Number(currentA),
+        powerW: powerW === "" ? null : Number(powerW),
+        s3DocPath,
+        s3ImgPath,
+        thumbnail: thumb || null,
+        ...passthrough,
+        _isEdit: isEdit,
+      });
+    } catch (err) {
+      setSubmitError(err?.errors?.[0]?.message || err?.message || String(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form className="dhc-manager-form" onSubmit={handleSubmit}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          margin: "0 0 1rem",
+        }}
+      >
+        <h3 style={{ margin: 0, fontSize: "1rem" }}>
+          {!isEdit
+            ? "Add catalogue model"
+            : ro
+            ? `View model ${item.modelNumber}`
+            : `Modify model ${item.modelNumber}`}
+        </h3>
+        {isEdit && canEdit && (
+          <button
+            type="button"
+            className="dhc-button-ghost"
+            onClick={() => setEditing((v) => !v)}
+          >
+            {ro ? "Modify" : "View"}
+          </button>
+        )}
+      </div>
+
+      <div className="dhc-form-field">
+        <label className="dhc-form-label">Model number</label>
+        <input
+          className="dhc-form-input"
+          value={modelNumber}
+          onChange={(e) => setModelNumber(e.target.value)}
+          placeholder="ACME-NVR-8CH"
+          readOnly={isEdit || ro}
+          required
+        />
+      </div>
+      <div className="dhc-form-field">
+        <label className="dhc-form-label">Brand</label>
+        <input
+          className="dhc-form-input"
+          value={brand}
+          onChange={(e) => setBrand(e.target.value)}
+          placeholder="ACME"
+          readOnly={ro}
+          required
+        />
+      </div>
+      <div
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}
+      >
+        <div className="dhc-form-field">
+          <label className="dhc-form-label">Category</label>
+          <select
+            className="dhc-form-input"
+            value={category}
+            disabled={ro}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              const c = DEVICE_CATEGORIES.find((x) => x.id === e.target.value);
+              setDeviceType(c.subTypes[0].label);
+            }}
+          >
+            {DEVICE_CATEGORIES.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="dhc-form-field">
+          <label className="dhc-form-label">Device type</label>
+          <select
+            className="dhc-form-input"
+            value={deviceType}
+            disabled={ro}
+            onChange={(e) => setDeviceType(e.target.value)}
+          >
+            {subTypes.map((s) => (
+              <option key={s.label} value={s.label}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className="dhc-form-field">
+        <label className="dhc-form-label">Description</label>
+        <input
+          className="dhc-form-input"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          readOnly={ro}
+        />
+      </div>
+
+      <div className="dhc-form-field">
+        <label className="dhc-form-label">Capabilities</label>
+        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+          {CAPS.map(([k, lbl]) => (
+            <label
+              key={k}
+              style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.85rem" }}
+            >
+              <input
+                type="checkbox"
+                checked={!!caps[k]}
+                disabled={ro}
+                onChange={(e) =>
+                  setCaps((c) => ({ ...c, [k]: e.target.checked }))
+                }
+              />
+              {lbl}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="dhc-form-field">
+        <label className="dhc-form-label">Power</label>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr 1fr",
+            gap: "0.6rem",
+          }}
+        >
+          <div>
+            <div className="dhc-form-label" style={{ fontSize: "0.7rem" }}>
+              Source
+            </div>
+            <select
+              className="dhc-form-input"
+              value={powerSource}
+              disabled={ro}
+              onChange={(e) => setPowerSource(e.target.value)}
+            >
+              {POWER_SOURCES.map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <div className="dhc-form-label" style={{ fontSize: "0.7rem" }}>
+              Voltage (V)
+            </div>
+            <input
+              className="dhc-form-input"
+              type="number"
+              step="any"
+              list="dhc-volts"
+              value={voltageV}
+              readOnly={ro}
+              onChange={(e) => setVoltageV(e.target.value)}
+              placeholder="220"
+            />
+            <datalist id="dhc-volts">
+              {COMMON_VOLTAGES.map((v) => (
+                <option key={v} value={v} />
+              ))}
+            </datalist>
+          </div>
+          <div>
+            <div className="dhc-form-label" style={{ fontSize: "0.7rem" }}>
+              Current (A)
+            </div>
+            <input
+              className="dhc-form-input"
+              type="number"
+              step="any"
+              value={currentA}
+              readOnly={ro}
+              onChange={(e) => setCurrentA(e.target.value)}
+              placeholder="0.5"
+            />
+          </div>
+          <div>
+            <div className="dhc-form-label" style={{ fontSize: "0.7rem" }}>
+              Power in (W)
+            </div>
+            <input
+              className="dhc-form-input"
+              type="number"
+              step="any"
+              value={powerW}
+              readOnly={ro}
+              onChange={(e) => setPowerW(e.target.value)}
+              placeholder="110"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}
+      >
+        <div className="dhc-form-field">
+          <label className="dhc-form-label">Image (one)</label>
+          {!ro && (
+            <input type="file" accept="image/*" onChange={onImage} />
+          )}
+          {thumb ? (
+            <img
+              src={thumb}
+              alt="preview"
+              style={{
+                marginTop: "0.4rem",
+                width: 64,
+                height: 64,
+                objectFit: "cover",
+                borderRadius: "0.4rem",
+                border: "1px solid rgba(148,163,184,0.3)",
+              }}
+            />
+          ) : remoteImage ? (
+            <div style={{ marginTop: "0.4rem" }}>
+              <img
+                src={remoteImage.url}
+                alt="pre-uploaded"
+                style={{
+                  width: 64,
+                  height: 64,
+                  objectFit: "cover",
+                  borderRadius: "0.4rem",
+                  border: "1px solid rgba(148,163,184,0.3)",
+                }}
+              />
+              <div
+                style={{
+                  fontSize: "0.7rem",
+                  color: "#9ca3af",
+                  marginTop: "0.2rem",
+                }}
+              >
+                pre-uploaded — will be linked on save
+              </div>
+            </div>
+          ) : (
+            <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>
+              {item?.s3ImgPath ? "image uploaded" : "no image"}
+            </span>
+          )}
+        </div>
+        <div className="dhc-form-field">
+          <label className="dhc-form-label">Docs (one or more)</label>
+          {!ro && (
+            <input
+              type="file"
+              multiple
+              onChange={(e) => setDocFiles(Array.from(e.target.files || []))}
+            />
+          )}
+          <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>
+            {docFiles.length
+              ? `${docFiles.length} file(s) to upload`
+              : item?.s3DocPath
+              ? "docs uploaded"
+              : "no docs"}
+          </span>
+        </div>
+      </div>
+
+      {submitError && (
+        <div className="dhc-form-error" style={{ marginTop: "0.5rem" }}>
+          {submitError}
+        </div>
+      )}
+
+      <div className="dhc-form-actions">
+        {!ro && (
+          <button
+            type="submit"
+            className="dhc-button-primary"
+            disabled={!canSubmit}
+          >
+            {saving ? (isEdit ? "Saving…" : "Adding…") : isEdit ? "Save" : "Add"}
+          </button>
+        )}
+        <button type="button" className="dhc-button-ghost" onClick={onCancel}>
+          {ro ? "Close" : "Cancel"}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+export default DeviceModelForm;

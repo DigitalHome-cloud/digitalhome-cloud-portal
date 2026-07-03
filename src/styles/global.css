@@ -636,3 +636,114 @@ body {
 .dhc-back-link:hover {
   text-decoration: underline;
 }
+
+/* === SmartHome Manager + Device forms (moved from Designer) === */
+.dhc-manager-list {
+  margin-bottom: 1.5rem;
+}
+
+.dhc-manager-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.dhc-manager-table th,
+.dhc-manager-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.dhc-manager-table th {
+  font-weight: 600;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dhc-home-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.5rem;
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 0.4rem;
+  color: #e2e8f0;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.dhc-home-pick:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+}
+
+.dhc-home-pick--active {
+  background: #1d4ed8;
+  border-color: #3b82f6;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.dhc-home-pick-check {
+  width: 1em;
+  text-align: center;
+  color: #4ade80;
+}
+
+.dhc-home-pick--active .dhc-home-pick-check {
+  color: #ffffff;
+}
+
+.dhc-manager-form {
+  background: radial-gradient(circle at top left, #1e293b, #020617);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  max-width: 500px;
+}
+
+.dhc-form-field {
+  margin-bottom: 0.75rem;
+}
+
+.dhc-form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  margin-bottom: 0.2rem;
+}
+
+.dhc-form-input {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: #020617;
+  color: #e5e7eb;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.dhc-form-input:focus {
+  outline: none;
+  border-color: #22c55e;
+}
+
+.dhc-form-error {
+  font-size: 0.75rem;
+  color: #fca5a5;
+  margin-top: 0.15rem;
+}
+
+.dhc-form-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}

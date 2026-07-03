@@ -35,6 +35,16 @@ const Header = () => {
             <Link to="/about" className="dhc-nav-link">
               {t("nav.about")}
             </Link>
+            {isAuthenticated && (
+              <>
+                <Link to="/manager" className="dhc-nav-link">
+                  {t("nav.manager", { defaultValue: "Manager" })}
+                </Link>
+                <Link to="/inventory" className="dhc-nav-link">
+                  {t("nav.inventory", { defaultValue: "Inventory" })}
+                </Link>
+              </>
+            )}
             <a
               href="https://github.com/DigitalHome-cloud"
               target="_blank"
@@ -53,13 +63,22 @@ const Header = () => {
               onChange={(e) => setActiveHome(e.target.value)}
               aria-label={t("smarthome.label")}
             >
-              <optgroup label={t("smarthome.demoGroup")}>
-                {demoHomes.map((h) => (
-                  <option key={h.id} value={h.id}>
-                    {h.id}
-                  </option>
-                ))}
-              </optgroup>
+              {activeHome.id === "" && (
+                <option value="">
+                  {userHomes.length === 0
+                    ? t("smarthome.none", { defaultValue: "No homes yet" })
+                    : t("smarthome.pick", { defaultValue: "Select a home…" })}
+                </option>
+              )}
+              {demoHomes.length > 0 && (
+                <optgroup label={t("smarthome.demoGroup")}>
+                  {demoHomes.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.id}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
               {userHomes.length > 0 && (
                 <optgroup label={t("smarthome.yourHomes")}>
                   {userHomes.map((h) => (
