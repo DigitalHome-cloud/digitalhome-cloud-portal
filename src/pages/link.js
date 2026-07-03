@@ -45,7 +45,7 @@ const LIST_DIGITAL_HOMES = /* GraphQL */ `
 `;
 
 const APPROVE_DEVICE_CODE = /* GraphQL */ `
-  mutation ApproveDeviceCode($user_code: String!, $home_id: String!) {
+  mutation ApproveDeviceCode($user_code: String!, $home_id: String) {
     approveDeviceCode(user_code: $user_code, home_id: $home_id) {
       status
       home_id
@@ -252,12 +252,8 @@ const LinkPage = ({ location }) => {
   };
 
   const handleApprove = async () => {
-    if (!selectedHome) {
-      setError(
-        t("link.pickHome", { defaultValue: "Pick a home to link the box to." })
-      );
-      return;
-    }
+    // Two-step: the home is optional here. Approve with no home to register the
+    // box to your account and assign it later from "My Edges".
     setSubmitting(true);
     setError("");
     setMessage("");
@@ -266,7 +262,7 @@ const LinkPage = ({ location }) => {
         query: APPROVE_DEVICE_CODE,
         variables: {
           user_code: userCode.trim().toUpperCase(),
-          home_id: selectedHome,
+          home_id: selectedHome || null,
         },
         authMode: "userPool",
       });
@@ -406,20 +402,19 @@ const LinkPage = ({ location }) => {
                     <>
                       <div className="dhc-form-row">
                         <label>
-                          {t("link.home", { defaultValue: "Link to home" })}
+                          {t("link.home", {
+                            defaultValue: "Link to home (optional)",
+                          })}
                           <select
                             value={selectedHome}
                             onChange={(e) => setSelectedHome(e.target.value)}
                             disabled={loadingHomes || showCreate}
                           >
-                            {homes.length === 0 && (
-                              <option value="">
-                                {t("link.noHomes", {
-                                  defaultValue:
-                                    "No homes yet — create one below",
-                                })}
-                              </option>
-                            )}
+                            <option value="">
+                              {t("link.linkLater", {
+                                defaultValue: "— register only, link later —",
+                              })}
+                            </option>
                             {homes.map((h) => (
                               <option key={h.smartHomeId} value={h.smartHomeId}>
                                 {h.smartHomeId}
@@ -488,14 +483,18 @@ const LinkPage = ({ location }) => {
                           type="button"
                           className="dhc-button-base dhc-button-primary"
                           onClick={handleApprove}
-                          disabled={submitting || !selectedHome}
+                          disabled={submitting}
                         >
                           {submitting
                             ? t("link.approving", {
                                 defaultValue: "Approving…",
                               })
-                            : t("link.approve", {
+                            : selectedHome
+                            ? t("link.approve", {
                                 defaultValue: "Approve & link",
+                              })
+                            : t("link.approveRegister", {
+                                defaultValue: "Approve (register only)",
                               })}
                         </button>
                         <button
