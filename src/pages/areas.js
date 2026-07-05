@@ -58,14 +58,7 @@ const UPDATE_AREA = /* GraphQL */ `
   }
 `;
 
-const EMPTY = {
-  country: "",
-  postalCode: "",
-  name: "",
-  latitude: "",
-  longitude: "",
-  timezone: "",
-};
+const EMPTY = { country: "", postalCode: "", name: "" };
 
 const AreasPage = () => {
   const { t } = useTranslation();
@@ -123,45 +116,77 @@ const AreasPage = () => {
       country: a.country,
       postalCode: a.postalCode,
       name: a.name,
-      latitude: String(a.latitude),
-      longitude: String(a.longitude),
-      timezone: a.timezone || "",
     });
+
+  // Postal code -> coordinates (Zippopotam handles rural postal areas), then
+  // coordinates -> IANA timezone (Open-Meteo). Both are keyless and CORS-enabled,
+  // so the lookup runs client-side — the user only enters country, ZIP, city.
+  const geocode = async (country, postalCode) => {
+    const zp = await fetch(
+      `https://api.zippopotam.us/${country.toLowerCase()}/${postalCode}`
+    );
+    if (!zp.ok) throw new Error("postal");
+    const place = (await zp.json()).places?.[0];
+    if (!place) throw new Error("postal");
+    const latitude = parseFloat(place.latitude);
+    const longitude = parseFloat(place.longitude);
+    let timezone = null;
+    try {
+      const tz = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&timezone=auto&forecast_days=1`
+      );
+      timezone = (await tz.json())?.timezone || null;
+    } catch (e) {
+      /* timezone is optional */
+    }
+    return { latitude, longitude, timezone };
+  };
 
   const save = async () => {
     setBusy(true);
     setError("");
     setMessage("");
-    const areaId = `${form.country
-      .trim()
-      .toUpperCase()}-${form.postalCode.trim()}`;
-    const input = {
-      areaId,
-      country: form.country.trim().toUpperCase(),
-      postalCode: form.postalCode.trim(),
-      name: form.name.trim(),
-      latitude: parseFloat(form.latitude),
-      longitude: parseFloat(form.longitude),
-      timezone: form.timezone.trim() || null,
-    };
+    const country = form.country.trim().toUpperCase();
+    const postalCode = form.postalCode.trim();
+    const areaId = `${country}-${postalCode}`;
     try {
+      const geo = await geocode(country, postalCode);
+      const input = {
+        areaId,
+        country,
+        postalCode,
+        name: form.name.trim(),
+        latitude: geo.latitude,
+        longitude: geo.longitude,
+        timezone: geo.timezone,
+      };
       await client.graphql({
         query: form._mode === "add" ? CREATE_AREA : UPDATE_AREA,
         variables: { input },
         authMode: "userPool",
       });
       setMessage(
-        t("areas.saved", { defaultValue: "Area {{id}} saved.", id: areaId })
+        t("areas.saved", {
+          defaultValue: "Area {{id}} saved ({{lat}}, {{lon}}).",
+          id: areaId,
+          lat: geo.latitude.toFixed(4),
+          lon: geo.longitude.toFixed(4),
+        })
       );
       setForm(null);
       await load();
     } catch (err) {
       console.error("save area failed", err);
       setError(
-        t("areas.saveFailed", {
-          defaultValue:
-            "Could not save the area. Only admins can add or edit areas.",
-        })
+        err?.message === "postal"
+          ? t("areas.geoFailed", {
+              defaultValue:
+                "Couldn't find that postal code — check the country and ZIP.",
+            })
+          : t("areas.saveFailed", {
+              defaultValue:
+                "Could not save the area. Only admins can add or edit areas.",
+            })
       );
     } finally {
       setBusy(false);
@@ -229,7 +254,11 @@ const AreasPage = () => {
             <h3 style={{ margin: "0 0 0.4rem" }}>
               {t("areas.cat.weather", { defaultValue: "Weather" })}{" "}
               <span
-                style={{ fontSize: "0.75rem", color: "#9ca3af", fontWeight: 400 }}
+                style={{
+                  fontSize: "0.75rem",
+                  color: "#9ca3af",
+                  fontWeight: 400,
+                }}
               >
                 {t("areas.cat.weatherMeta", {
                   defaultValue: "hourly · 2000–present",
@@ -255,9 +284,15 @@ const AreasPage = () => {
             <h3 style={{ margin: "0 0 0.4rem" }}>
               {t("areas.cat.air", { defaultValue: "Air quality" })}{" "}
               <span
-                style={{ fontSize: "0.75rem", color: "#9ca3af", fontWeight: 400 }}
+                style={{
+                  fontSize: "0.75rem",
+                  color: "#9ca3af",
+                  fontWeight: 400,
+                }}
               >
-                {t("areas.cat.airMeta", { defaultValue: "hourly · 2013–present" })}
+                {t("areas.cat.airMeta", {
+                  defaultValue: "hourly · 2013–present",
+                })}
               </span>
             </h3>
             <p style={{ fontSize: "0.82rem", color: "#c3cbd9", margin: 0 }}>
@@ -300,14 +335,9 @@ const AreasPage = () => {
                 w: 100,
                 disabled: form._mode === "edit",
               })}
-              {fld(
-                "name",
-                t("areas.namePh", { defaultValue: "City / area name" }),
-                { w: 240 }
-              )}
-              {fld("latitude", "52.6061", { w: 120 })}
-              {fld("longitude", "11.8585", { w: 120 })}
-              {fld("timezone", "Europe/Berlin", { w: 170 })}
+              {fld("name", t("areas.cityPh", { defaultValue: "City" }), {
+                w: 240,
+              })}
             </div>
             <p
               style={{
@@ -320,24 +350,24 @@ const AreasPage = () => {
               <code>
                 {(form.country || "??").toUpperCase()}-
                 {form.postalCode || "?????"}
-              </code>
+              </code>{" "}
+              —{" "}
+              {t("areas.lookupNote", {
+                defaultValue:
+                  "coordinates & timezone are looked up automatically from the postal code.",
+              })}
             </p>
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <button
                 type="button"
                 className="dhc-button-base dhc-button-primary"
                 disabled={
-                  busy ||
-                  !form.country ||
-                  !form.postalCode ||
-                  !form.name ||
-                  !form.latitude ||
-                  !form.longitude
+                  busy || !form.country || !form.postalCode || !form.name
                 }
                 onClick={save}
               >
                 {busy
-                  ? t("areas.saving", { defaultValue: "Saving…" })
+                  ? t("areas.saving", { defaultValue: "Looking up…" })
                   : t("areas.save", { defaultValue: "Save" })}
               </button>
               <button
