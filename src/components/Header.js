@@ -7,7 +7,7 @@ import { useSmartHome } from "../context/SmartHomeContext";
 const Header = () => {
   const { t } = useTranslation();
   const { languages, language, changeLanguage } = useI18next();
-  const { authState, isAuthenticated, user, signOut } = useAuth();
+  const { authState, isAuthenticated, user, signOut, hasGroup } = useAuth();
   const { smartHomes, demoHomes, userHomes, activeHome, setActiveHome } =
     useSmartHome();
 
@@ -52,6 +52,11 @@ const Header = () => {
                 <Link to="/operator" className="dhc-nav-link">
                   {t("nav.operator", { defaultValue: "Operator" })}
                 </Link>
+                {hasGroup && hasGroup("dhc-admins") && (
+                  <Link to="/debug" className="dhc-nav-link">
+                    {t("nav.debug", { defaultValue: "Debug" })}
+                  </Link>
+                )}
               </>
             )}
             <a
