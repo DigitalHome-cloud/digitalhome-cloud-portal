@@ -49,6 +49,9 @@ const Header = () => {
                 <Link to="/areas" className="dhc-nav-link">
                   {t("nav.areas", { defaultValue: "Areas" })}
                 </Link>
+                <Link to="/operator" className="dhc-nav-link">
+                  {t("nav.operator", { defaultValue: "Operator" })}
+                </Link>
               </>
             )}
             <a
