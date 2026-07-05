@@ -16,4 +16,7 @@ async function fetchGold(pathUnderGold) {
 }
 
 export const fetchIndex = () => fetchGold("index.json");
-export const fetchAreaBlock = (areaId, kind) => fetchGold(`${areaId}/${kind}.json`);
+// window ∈ {all, 10y, 5y, 3y, 1y}. Weather-derived blocks are windowed; water is not.
+export const fetchAreaBlock = (areaId, kind, window = "all") =>
+  fetchGold(`${areaId}/${window}/${kind}.json`);
+export const fetchWater = (areaId) => fetchGold(`${areaId}/water.json`);
