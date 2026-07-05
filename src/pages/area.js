@@ -4,7 +4,11 @@ import { graphql, navigate, Link } from "gatsby";
 import { useAuth } from "../context/AuthContext";
 import EChart from "../components/charts/EChart";
 import * as opt from "../components/charts/options";
-import { fetchAreaBlock, fetchWater } from "../utils/weatherData";
+import {
+  fetchAreaBlock,
+  fetchWater,
+  fetchLightning,
+} from "../utils/weatherData";
 
 // Per-area renewables dashboard. Reads ?id=DE-39576, fetches the pre-aggregated
 // gold JSON from S3, and renders a scorecard + four analytics tabs.
@@ -81,6 +85,7 @@ const AreaPage = ({ location }) => {
   const [data, setData] = React.useState({});
   const [summary, setSummary] = React.useState(null);
   const [water, setWater] = React.useState(undefined); // undefined=loading, null=none
+  const [lightning, setLightning] = React.useState(null);
   const [error, setError] = React.useState("");
 
   React.useEffect(() => {
@@ -117,6 +122,9 @@ const AreaPage = ({ location }) => {
     fetchWater(areaId)
       .then(setWater)
       .catch(() => setWater(null));
+    fetchLightning(areaId)
+      .then(setLightning)
+      .catch(() => setLightning(null));
   }, [isAuthenticated, areaId]);
 
   const s = data.solar,
@@ -183,7 +191,63 @@ const AreaPage = ({ location }) => {
               value={summary.aqi_band}
               hint={`PM2.5 ${summary.mean_pm25 ?? "—"} µg/m³`}
             />
+            {lightning && (
+              <Stat
+                label="Lightning Ng"
+                value={lightning.ng}
+                unit="/km²/yr"
+                hint={lightning.risk_level}
+              />
+            )}
           </Row>
+        )}
+
+        {lightning && (
+          <div
+            style={{
+              ...card,
+              marginTop: "0.9rem",
+              borderLeft: "3px solid #e6a13a",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "0.6rem",
+                alignItems: "baseline",
+              }}
+            >
+              <strong style={{ fontSize: "0.95rem" }}>
+                ⚡ Surge protection · {lightning.standard}
+              </strong>
+              <span
+                className="dhc-nav-pill"
+                style={
+                  lightning.spd_indication.includes("required")
+                    ? { background: "rgba(224,102,102,0.18)", color: "#e06666" }
+                    : { background: "rgba(230,161,58,0.18)", color: "#e6a13a" }
+                }
+              >
+                SPD {lightning.spd_indication}
+              </span>
+              <span style={{ fontSize: "0.8rem", color: "#9ca3af" }}>
+                Ng ≈ {lightning.ng} {lightning.unit} ({lightning.risk_level})
+              </span>
+            </div>
+            <p
+              style={{
+                fontSize: "0.82rem",
+                color: "#c3cbd9",
+                margin: "0.5rem 0 0.2rem",
+              }}
+            >
+              {lightning.note}
+            </p>
+            <p style={{ fontSize: "0.7rem", color: "#6c7689", margin: 0 }}>
+              {lightning.source}
+            </p>
+          </div>
         )}
 
         <div

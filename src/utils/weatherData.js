@@ -20,3 +20,4 @@ export const fetchIndex = () => fetchGold("index.json");
 export const fetchAreaBlock = (areaId, kind, window = "all") =>
   fetchGold(`${areaId}/${window}/${kind}.json`);
 export const fetchWater = (areaId) => fetchGold(`${areaId}/water.json`);
+export const fetchLightning = (areaId) => fetchGold(`${areaId}/lightning.json`);

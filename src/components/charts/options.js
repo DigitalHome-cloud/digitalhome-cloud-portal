@@ -353,7 +353,6 @@ export function durationCurve(cl) {
         data: pts,
         showSymbol: false,
         lineStyle: { color: C.temp, width: 2 },
-        areaStyle: { color: "rgba(108,157,255,0.10)" },
       },
     ],
   };
