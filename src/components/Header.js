@@ -46,6 +46,9 @@ const Header = () => {
                 <Link to="/edges" className="dhc-nav-link">
                   {t("nav.edges", { defaultValue: "Edges" })}
                 </Link>
+                <Link to="/areas" className="dhc-nav-link">
+                  {t("nav.areas", { defaultValue: "Areas" })}
+                </Link>
               </>
             )}
             <a
@@ -56,7 +59,7 @@ const Header = () => {
             >
               {t("nav.github")}
             </a>
-         </div>
+          </div>
 
           {/* SmartHome selector */}
           <div className="dhc-home-selector">
