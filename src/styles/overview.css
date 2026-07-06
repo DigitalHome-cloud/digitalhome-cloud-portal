@@ -731,3 +731,89 @@
   font: 600 0.82rem "IBM Plex Sans";
   color: var(--ov-amber);
 }
+
+/* ── area-data pages (Operator / Areas) ── */
+.ov-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.ov-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.6rem;
+}
+.ov-linkcard {
+  flex: 1 1 300px;
+  min-width: 280px;
+  border: 1px solid rgba(120, 140, 130, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1rem 1.1rem;
+  text-decoration: none;
+  color: var(--ov-text);
+  transition: border-color 0.15s;
+}
+.ov-linkcard:hover {
+  border-color: rgba(111, 174, 126, 0.5);
+}
+.ov-info-card {
+  flex: 1 1 320px;
+  border: 1px solid rgba(120, 140, 130, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.9rem 1.1rem;
+}
+.ov-metric-l {
+  font-size: 0.68rem;
+  color: var(--ov-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ov-metric-v {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.ov-metric-v span {
+  font-size: 0.72rem;
+  color: var(--ov-muted);
+  font-weight: 400;
+}
+.ov-tablewrap {
+  overflow-x: auto;
+  border: 1px solid rgba(120, 140, 130, 0.18);
+  border-radius: 12px;
+}
+.ov-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.ov-table th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  color: var(--ov-muted);
+  font: 600 0.72rem "IBM Plex Mono";
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(120, 140, 130, 0.18);
+  background: rgba(120, 140, 130, 0.06);
+}
+.ov-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(120, 140, 130, 0.08);
+}
+.ov-table tr:last-child td {
+  border-bottom: none;
+}
+.ov-accent {
+  color: var(--ov-green);
+  text-decoration: none;
+}
+.ov-best {
+  color: #6fd48a;
+  font-weight: 700;
+}

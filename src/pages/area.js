@@ -1,5 +1,14 @@
 import * as React from "react";
-import Layout from "../components/Layout";
+import OverviewShell from "../components/OverviewShell";
+import "@fontsource/ibm-plex-sans/300.css";
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-sans/700.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
+import "@fontsource/ibm-plex-mono/600.css";
+import "../styles/overview.css";
 import { graphql, navigate, Link } from "gatsby";
 import { useAuth } from "../context/AuthContext";
 import EChart from "../components/charts/EChart";
@@ -133,12 +142,12 @@ const AreaPage = ({ location }) => {
     aq = data.air;
 
   return (
-    <Layout>
+    <OverviewShell active="areadata" title={summary?.name || areaId}>
       <main className="dhc-main">
         <section className="dhc-hero" style={{ paddingBottom: "0.5rem" }}>
           <p style={{ margin: 0 }}>
-            <Link to="/operator" className="dhc-nav-link">
-              ← Areas
+            <Link to="/operator" className="ov-accent">
+              ← Area data
             </Link>
           </p>
           <h1 className="dhc-hero-title">{summary?.name || areaId}</h1>
@@ -464,7 +473,7 @@ const AreaPage = ({ location }) => {
             </p>
           ))}
       </main>
-    </Layout>
+    </OverviewShell>
   );
 };
 

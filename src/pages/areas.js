@@ -1,15 +1,23 @@
 import * as React from "react";
-import Layout from "../components/Layout";
 import { useTranslation } from "gatsby-plugin-react-i18next";
 import { graphql, navigate } from "gatsby";
+import OverviewShell from "../components/OverviewShell";
 import { useAuth } from "../context/AuthContext";
 import { generateClient } from "aws-amplify/api";
 
+import "@fontsource/ibm-plex-sans/300.css";
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-sans/700.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
+import "@fontsource/ibm-plex-mono/600.css";
+import "../styles/overview.css";
+
 // Areas — geographic areas keyed by {country}-{postalCode} (e.g. "DE-39576").
-// Weather + air-quality data (in the Delta Lake) are keyed by AREA, not by
-// SmartHome; a home belongs to the area of its country+postalCode. Admins manage
-// areas here (add lat/lon so the weather pipeline can fetch); everyone can read.
-// Inline GraphQL so it's independent of codegen.
+// The "manage" side of Area data: admins add/edit areas (lat/lon so the weather
+// pipeline can fetch); a "View area data" button toggles back to /operator.
 
 const client = generateClient();
 
@@ -29,7 +37,6 @@ const LIST_AREAS = /* GraphQL */ `
     }
   }
 `;
-
 const LIST_HOMES = /* GraphQL */ `
   query ListHomes {
     listDigitalHomes {
@@ -41,7 +48,6 @@ const LIST_HOMES = /* GraphQL */ `
     }
   }
 `;
-
 const CREATE_AREA = /* GraphQL */ `
   mutation CreateArea($input: CreateAreaInput!) {
     createArea(input: $input) {
@@ -49,7 +55,6 @@ const CREATE_AREA = /* GraphQL */ `
     }
   }
 `;
-
 const UPDATE_AREA = /* GraphQL */ `
   mutation UpdateArea($input: UpdateAreaInput!) {
     updateArea(input: $input) {
@@ -70,7 +75,7 @@ const AreasPage = () => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
   const [message, setMessage] = React.useState("");
-  const [form, setForm] = React.useState(null); // null = closed; {} = add; {...} = edit
+  const [form, setForm] = React.useState(null); // null=closed; {} = add; {...} = edit
   const [busy, setBusy] = React.useState(false);
 
   React.useEffect(() => {
@@ -118,9 +123,8 @@ const AreasPage = () => {
       name: a.name,
     });
 
-  // Postal code -> coordinates (Zippopotam handles rural postal areas), then
-  // coordinates -> IANA timezone (Open-Meteo). Both are keyless and CORS-enabled,
-  // so the lookup runs client-side — the user only enters country, ZIP, city.
+  // Postal code -> coordinates (Zippopotam), then coordinates -> IANA timezone
+  // (Open-Meteo). Both keyless and CORS-enabled, so the lookup runs client-side.
   const geocode = async (country, postalCode) => {
     const zp = await fetch(
       `https://api.zippopotam.us/${country.toLowerCase()}/${postalCode}`
@@ -195,12 +199,8 @@ const AreasPage = () => {
 
   const fld = (k, ph, opts = {}) => (
     <input
-      className="dhc-form-input"
-      style={{
-        maxWidth: opts.w || 160,
-        display: "inline-block",
-        marginRight: "0.4rem",
-      }}
+      className="ov-input"
+      style={{ maxWidth: opts.w || 160, marginRight: "0.4rem" }}
       placeholder={ph}
       value={form[k]}
       disabled={opts.disabled}
@@ -209,54 +209,48 @@ const AreasPage = () => {
   );
 
   return (
-    <Layout>
-      <main className="dhc-main">
-        <section className="dhc-hero">
-          <h1 className="dhc-hero-title">
-            {t("areas.title", { defaultValue: "Areas" })}
-          </h1>
-          <p className="dhc-hero-subtitle">
-            {t("areas.subtitle", {
-              defaultValue:
-                "Geographic areas ({country}-{postalCode}). Weather and air-quality data are collected per area; each SmartHome belongs to its area.",
-            })}
-          </p>
-          {isAdmin && !form && (
-            <p>
+    <OverviewShell active="areadata" title="Area data">
+      <div className="ov-page">
+        <div className="ov-page-head ov-head-row">
+          <div>
+            <h1 className="ov-page-title">
+              {t("areas.title", { defaultValue: "Areas" })}
+            </h1>
+            <p className="ov-page-sub">
+              {t("areas.subtitle", {
+                defaultValue:
+                  "Geographic areas ({country}-{postalCode}). Weather and air-quality data are collected per area; each SmartHome belongs to its area.",
+              })}
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="ov-btn ov-btn--ghost"
+              onClick={() => navigate("/operator")}
+            >
+              ← {t("areas.viewData", { defaultValue: "View area data" })}
+            </button>
+            {isAdmin && !form && (
               <button
                 type="button"
-                className="dhc-button-base dhc-button-primary"
+                className="ov-btn ov-btn--primary"
                 onClick={openAdd}
               >
                 {t("areas.add", { defaultValue: "+ Add area" })}
               </button>
-            </p>
-          )}
-        </section>
+            )}
+          </div>
+        </div>
 
-        <section
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "0.9rem",
-            marginBottom: "1.4rem",
-          }}
-        >
-          <div
-            style={{
-              flex: "1 1 320px",
-              padding: "0.9rem 1.1rem",
-              border: "1px solid #2b3346",
-              borderRadius: "10px",
-              background: "rgba(255,255,255,0.02)",
-            }}
-          >
-            <h3 style={{ margin: "0 0 0.4rem" }}>
+        <div className="ov-cards">
+          <div className="ov-info-card">
+            <h3 style={{ margin: "0 0 0.4rem", fontSize: "0.95rem" }}>
               {t("areas.cat.weather", { defaultValue: "Weather" })}{" "}
               <span
                 style={{
                   fontSize: "0.75rem",
-                  color: "#9ca3af",
+                  color: "#8a958f",
                   fontWeight: 400,
                 }}
               >
@@ -265,28 +259,20 @@ const AreasPage = () => {
                 })}
               </span>
             </h3>
-            <p style={{ fontSize: "0.82rem", color: "#c3cbd9", margin: 0 }}>
+            <p style={{ fontSize: "0.82rem", color: "#b9c4be", margin: 0 }}>
               {t("areas.cat.weatherBody", {
                 defaultValue:
                   "For solar & wind siting: temperature, humidity & dew point; wind at 10 m and 100 m (turbine hub height) + gusts; solar irradiance (GHI, DNI, diffuse) with computed sun elevation/azimuth; precipitation (rain/snow); pressure; cloud cover; evapotranspiration.",
               })}
             </p>
           </div>
-          <div
-            style={{
-              flex: "1 1 320px",
-              padding: "0.9rem 1.1rem",
-              border: "1px solid #2b3346",
-              borderRadius: "10px",
-              background: "rgba(255,255,255,0.02)",
-            }}
-          >
-            <h3 style={{ margin: "0 0 0.4rem" }}>
+          <div className="ov-info-card">
+            <h3 style={{ margin: "0 0 0.4rem", fontSize: "0.95rem" }}>
               {t("areas.cat.air", { defaultValue: "Air quality" })}{" "}
               <span
                 style={{
                   fontSize: "0.75rem",
-                  color: "#9ca3af",
+                  color: "#8a958f",
                   fontWeight: 400,
                 }}
               >
@@ -295,29 +281,24 @@ const AreasPage = () => {
                 })}
               </span>
             </h3>
-            <p style={{ fontSize: "0.82rem", color: "#c3cbd9", margin: 0 }}>
+            <p style={{ fontSize: "0.82rem", color: "#b9c4be", margin: 0 }}>
               {t("areas.cat.airBody", {
                 defaultValue:
                   "PM10, PM2.5, NO₂, O₃, SO₂, CO, dust, aerosol optical depth, UV index.",
               })}
             </p>
           </div>
-        </section>
+        </div>
 
-        {error && <p className="dhc-error">{error}</p>}
-        {message && <p className="dhc-message">{message}</p>}
+        {error && <p className="ov-err">{error}</p>}
+        {message && <p className="ov-msg">{message}</p>}
 
         {form && (
-          <section
-            style={{
-              marginBottom: "1.2rem",
-              padding: "1rem 1.2rem",
-              border: "1px solid #2b3346",
-              borderRadius: "10px",
-              background: "rgba(255,255,255,0.02)",
-            }}
+          <div
+            className="ov-info-card"
+            style={{ marginBottom: "1.2rem", flex: "unset" }}
           >
-            <h3 style={{ marginTop: 0 }}>
+            <h3 style={{ marginTop: 0, fontSize: "0.95rem" }}>
               {form._mode === "add"
                 ? t("areas.add", { defaultValue: "+ Add area" })
                 : t("areas.edit", { defaultValue: "Edit area" })}
@@ -342,7 +323,7 @@ const AreasPage = () => {
             <p
               style={{
                 fontSize: "0.75rem",
-                color: "#9ca3af",
+                color: "#8a958f",
                 margin: "0.5rem 0",
               }}
             >
@@ -360,7 +341,7 @@ const AreasPage = () => {
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <button
                 type="button"
-                className="dhc-button-base dhc-button-primary"
+                className="ov-btn ov-btn--primary"
                 disabled={
                   busy || !form.country || !form.postalCode || !form.name
                 }
@@ -372,84 +353,95 @@ const AreasPage = () => {
               </button>
               <button
                 type="button"
-                className="dhc-button-base dhc-button-secondary"
+                className="ov-btn ov-btn--ghost"
                 onClick={() => setForm(null)}
               >
                 {t("areas.cancel", { defaultValue: "Cancel" })}
               </button>
             </div>
-          </section>
+          </div>
         )}
 
         {loading ? (
-          <p>{t("areas.loading", { defaultValue: "Loading…" })}</p>
+          <p style={{ color: "#8a958f" }}>
+            {t("areas.loading", { defaultValue: "Loading…" })}
+          </p>
         ) : areas.length === 0 ? (
-          <p style={{ color: "#9ca3af" }}>
+          <p style={{ color: "#8a958f" }}>
             {t("areas.empty", { defaultValue: "No areas yet." })}
           </p>
         ) : (
-          <table className="dhc-manager-table">
-            <thead>
-              <tr>
-                <th>{t("areas.col.area", { defaultValue: "Area" })}</th>
-                <th>
-                  {t("areas.col.coords", { defaultValue: "Coordinates" })}
-                </th>
-                <th>{t("areas.col.homes", { defaultValue: "SmartHomes" })}</th>
-                <th>
-                  {t("areas.col.weather", {
-                    defaultValue: "Last weather ingest",
-                  })}
-                </th>
-                {isAdmin && <th></th>}
-              </tr>
-            </thead>
-            <tbody>
-              {areas.map((a) => (
-                <tr key={a.areaId}>
-                  <td>
-                    <strong>{a.areaId}</strong>
-                    <br />
-                    <span style={{ fontSize: "0.8rem", color: "#9ca3af" }}>
-                      {a.name}
-                      {a.timezone ? ` · ${a.timezone}` : ""}
-                    </span>
-                  </td>
-                  <td style={{ fontFamily: "monospace", fontSize: "0.8rem" }}>
-                    {a.latitude?.toFixed(4)}, {a.longitude?.toFixed(4)}
-                  </td>
-                  <td>
-                    <span className="dhc-nav-pill">
-                      {homeCounts[a.areaId] || 0}
-                    </span>
-                  </td>
-                  <td style={{ fontSize: "0.8rem" }}>
-                    {a.lastIngestedAt ? (
-                      new Date(a.lastIngestedAt).toLocaleDateString()
-                    ) : (
-                      <span style={{ color: "#f59e0b" }}>
-                        {t("areas.never", { defaultValue: "never" })}
-                      </span>
-                    )}
-                  </td>
-                  {isAdmin && (
-                    <td>
-                      <button
-                        type="button"
-                        className="dhc-button-base dhc-button-secondary"
-                        onClick={() => openEdit(a)}
-                      >
-                        {t("areas.edit", { defaultValue: "Edit" })}
-                      </button>
-                    </td>
-                  )}
+          <div className="ov-tablewrap">
+            <table className="ov-table">
+              <thead>
+                <tr>
+                  <th>{t("areas.col.area", { defaultValue: "Area" })}</th>
+                  <th>
+                    {t("areas.col.coords", { defaultValue: "Coordinates" })}
+                  </th>
+                  <th>
+                    {t("areas.col.homes", { defaultValue: "SmartHomes" })}
+                  </th>
+                  <th>
+                    {t("areas.col.weather", {
+                      defaultValue: "Last weather ingest",
+                    })}
+                  </th>
+                  {isAdmin && <th></th>}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {areas.map((a) => (
+                  <tr key={a.areaId}>
+                    <td>
+                      <strong>{a.areaId}</strong>
+                      <br />
+                      <span style={{ fontSize: "0.8rem", color: "#8a958f" }}>
+                        {a.name}
+                        {a.timezone ? ` · ${a.timezone}` : ""}
+                      </span>
+                    </td>
+                    <td
+                      style={{
+                        fontFamily: "'IBM Plex Mono', monospace",
+                        fontSize: "0.8rem",
+                      }}
+                    >
+                      {a.latitude?.toFixed(4)}, {a.longitude?.toFixed(4)}
+                    </td>
+                    <td>
+                      <span className="ov-pill">
+                        {homeCounts[a.areaId] || 0}
+                      </span>
+                    </td>
+                    <td style={{ fontSize: "0.8rem" }}>
+                      {a.lastIngestedAt ? (
+                        new Date(a.lastIngestedAt).toLocaleDateString()
+                      ) : (
+                        <span style={{ color: "#f59e0b" }}>
+                          {t("areas.never", { defaultValue: "never" })}
+                        </span>
+                      )}
+                    </td>
+                    {isAdmin && (
+                      <td>
+                        <button
+                          type="button"
+                          className="ov-btn ov-btn--ghost"
+                          onClick={() => openEdit(a)}
+                        >
+                          {t("areas.edit", { defaultValue: "Edit" })}
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-      </main>
-    </Layout>
+      </div>
+    </OverviewShell>
   );
 };
 

@@ -1,40 +1,29 @@
 import * as React from "react";
-import Layout from "../components/Layout";
 import { graphql, navigate, Link } from "gatsby";
+import OverviewShell from "../components/OverviewShell";
 import { useAuth } from "../context/AuthContext";
 import { fetchIndex } from "../utils/weatherData";
 
-// Operator landing: area cards (scorecard metrics) + a cross-area comparison,
-// each linking to its per-area dashboard (/area?id=…). Data from gold index.json.
+import "@fontsource/ibm-plex-sans/300.css";
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-sans/700.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
+import "@fontsource/ibm-plex-mono/600.css";
+import "../styles/overview.css";
 
-const card = {
-  border: "1px solid #2b3346",
-  borderRadius: "10px",
-  background: "rgba(255,255,255,0.02)",
-  padding: "1rem 1.1rem",
-};
+// Area data landing (inside the Overview shell): area cards + a cross-area
+// comparison, each linking to its per-area dashboard (/area?id=…). A "Manage
+// areas" button toggles to /areas. Data from gold index.json.
 
 const Metric = ({ label, value, unit }) => (
   <div>
-    <div
-      style={{
-        fontSize: "0.68rem",
-        color: "#9ca3af",
-        textTransform: "uppercase",
-      }}
-    >
-      {label}
-    </div>
-    <div style={{ fontSize: "1.1rem", fontWeight: 700 }}>
+    <div className="ov-metric-l">{label}</div>
+    <div className="ov-metric-v">
       {value ?? "—"}
-      {unit && (
-        <span
-          style={{ fontSize: "0.72rem", color: "#9ca3af", fontWeight: 400 }}
-        >
-          {" "}
-          {unit}
-        </span>
-      )}
+      {unit && <span> {unit}</span>}
     </div>
   </div>
 );
@@ -71,41 +60,37 @@ const OperatorPage = () => {
   };
 
   return (
-    <Layout>
-      <main className="dhc-main">
-        <section className="dhc-hero">
-          <h1 className="dhc-hero-title">Operator · Area analytics</h1>
-          <p className="dhc-hero-subtitle">
-            Renewable-siting and climate analytics per area, from 20+ years of
-            hourly weather. Open an area for solar, wind, climate, and
-            air-quality detail.
-          </p>
-        </section>
+    <OverviewShell active="areadata" title="Area data">
+      <div className="ov-page">
+        <div className="ov-page-head ov-head-row">
+          <div>
+            <h1 className="ov-page-title">Area data</h1>
+            <p className="ov-page-sub">
+              Renewable-siting and climate analytics per area, from 20+ years of
+              hourly weather. Open an area for solar, wind, climate, and
+              air-quality detail.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="ov-btn ov-btn--ghost"
+            onClick={() => navigate("/areas")}
+          >
+            Manage areas →
+          </button>
+        </div>
 
-        {error && <p className="dhc-error">{error}</p>}
-        {!areas && !error && <p>Loading…</p>}
+        {error && <p className="ov-err">{error}</p>}
+        {!areas && !error && <p style={{ color: "#8a958f" }}>Loading…</p>}
 
         {areas && (
           <>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "1rem",
-                marginBottom: "1.6rem",
-              }}
-            >
+            <div className="ov-cards">
               {areas.map((a) => (
                 <Link
                   key={a.areaId}
                   to={`/area?id=${encodeURIComponent(a.areaId)}`}
-                  style={{
-                    ...card,
-                    flex: "1 1 300px",
-                    minWidth: 280,
-                    textDecoration: "none",
-                    color: "inherit",
-                  }}
+                  className="ov-linkcard"
                 >
                   <div
                     style={{
@@ -117,9 +102,9 @@ const OperatorPage = () => {
                     <strong style={{ fontSize: "1.05rem" }}>{a.name}</strong>
                     <span
                       style={{
-                        fontFamily: "monospace",
+                        fontFamily: "'IBM Plex Mono', monospace",
                         fontSize: "0.78rem",
-                        color: "#6c9dff",
+                        color: "var(--ov-green)",
                       }}
                     >
                       {a.areaId}
@@ -146,7 +131,7 @@ const OperatorPage = () => {
                     style={{
                       marginTop: "0.8rem",
                       fontSize: "0.8rem",
-                      color: "#6c9dff",
+                      color: "var(--ov-green)",
                     }}
                   >
                     Open dashboard →
@@ -155,16 +140,11 @@ const OperatorPage = () => {
               ))}
             </div>
 
-            <h3 style={{ margin: "0 0 0.6rem" }}>Compare</h3>
-            <div
-              className="tablewrap"
-              style={{
-                overflowX: "auto",
-                border: "1px solid #2b3346",
-                borderRadius: "10px",
-              }}
-            >
-              <table className="dhc-manager-table" style={{ width: "100%" }}>
+            <h3 style={{ margin: "0 0 0.6rem", fontSize: "0.95rem" }}>
+              Compare
+            </h3>
+            <div className="ov-tablewrap">
+              <table className="ov-table">
                 <thead>
                   <tr>
                     <th>Area</th>
@@ -182,7 +162,7 @@ const OperatorPage = () => {
                   {areas.map((a) => {
                     const cell = (key, v) =>
                       v === bestOf(key) ? (
-                        <strong style={{ color: "#48c996" }}>{v}</strong>
+                        <strong className="ov-best">{v}</strong>
                       ) : (
                         v
                       );
@@ -191,7 +171,7 @@ const OperatorPage = () => {
                         <td>
                           <Link
                             to={`/area?id=${encodeURIComponent(a.areaId)}`}
-                            style={{ color: "#6c9dff" }}
+                            className="ov-accent"
                           >
                             {a.name}
                           </Link>
@@ -221,8 +201,8 @@ const OperatorPage = () => {
             </div>
           </>
         )}
-      </main>
-    </Layout>
+      </div>
+    </OverviewShell>
   );
 };
 

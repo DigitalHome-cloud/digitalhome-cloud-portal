@@ -192,7 +192,12 @@ const OverviewShell = ({
             to={getAppUrl("modeler")}
             external
           />
-          <NavLink icon={IC.leaf} label="Area data" to="/operator" />
+          <NavLink
+            icon={IC.leaf}
+            label="Area data"
+            to="/operator"
+            active={active === "areadata"}
+          />
 
           <div className="ov-group">Manage</div>
           <NavLink
