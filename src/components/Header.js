@@ -37,14 +37,11 @@ const Header = () => {
             </Link>
             {isAuthenticated && (
               <>
-                <Link to="/manager" className="dhc-nav-link">
-                  {t("nav.manager", { defaultValue: "Manager" })}
+                <Link to="/fleet" className="dhc-nav-link">
+                  {t("nav.fleet", { defaultValue: "Fleet" })}
                 </Link>
                 <Link to="/inventory" className="dhc-nav-link">
                   {t("nav.inventory", { defaultValue: "Inventory" })}
-                </Link>
-                <Link to="/edges" className="dhc-nav-link">
-                  {t("nav.edges", { defaultValue: "Edges" })}
                 </Link>
                 <Link to="/areas" className="dhc-nav-link">
                   {t("nav.areas", { defaultValue: "Areas" })}

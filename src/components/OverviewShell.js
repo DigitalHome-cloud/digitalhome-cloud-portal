@@ -202,7 +202,7 @@ const OverviewShell = ({ children }) => {
           <NavLink
             icon={IC.fleet}
             label="Fleet"
-            to="/edges"
+            to="/fleet"
             locked={!isAuthenticated}
           />
 
