@@ -12,11 +12,11 @@ import {
   deleteDigitalHome,
 } from "../graphql/mutations";
 
-// Fleet — the Manager (Digital Homes) and Edges merged into one screen. Each home
-// lists its paired edge(s) nested beneath it, with live status + firmware version.
-// Pairing is initiated from the edge box itself (no "pair" button here); a small
-// assign control remains only for edges that have registered but aren't placed
-// under a home yet.
+// Fleet — the Manager (Digital Homes) and Edges merged into one screen, styled to
+// the Overview shell theme (.ov). Each home lists its paired edge(s) nested
+// beneath it, with status + firmware version. Pairing is initiated from the edge
+// box itself; a small assign control remains only for edges not yet placed under
+// a home.
 
 const client = generateClient();
 
@@ -43,14 +43,15 @@ const LINK_EDGE_TO_HOME = /* GraphQL */ `
   }
 `;
 
-const ACTIVE_WINDOW_MS = 15 * 60 * 1000; // "active" = telemetry within 15 min
 const shortId = (id) => (id ? id.replace(/^e-/, "").slice(0, 8) : "—");
-const isEdgeActive = (e) =>
-  !!e.last_telemetry_at &&
-  Date.now() - new Date(e.last_telemetry_at).getTime() < ACTIVE_WINDOW_MS;
+
+// Status. For now an edge is "Active" as soon as it is added — the real up/down
+// signal comes from the edge → cloud heartbeat, which lands with the edge data
+// lake pipeline. When that exists, replace this with a heartbeat-recency check.
+const isEdgeActive = (/* e */) => true;
 
 const relTime = (iso) => {
-  if (!iso) return "never";
+  if (!iso) return null;
   const s = Math.max(
     0,
     Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -62,25 +63,8 @@ const relTime = (iso) => {
 };
 
 const StatusPill = ({ active }) => (
-  <span
-    style={{
-      display: "inline-flex",
-      alignItems: "center",
-      gap: "0.4rem",
-      fontSize: "0.78rem",
-      fontWeight: 600,
-      color: active ? "#4ade80" : "#9ca3af",
-    }}
-  >
-    <span
-      style={{
-        width: 8,
-        height: 8,
-        borderRadius: "50%",
-        background: active ? "#22c55e" : "#6b7280",
-        boxShadow: active ? "0 0 6px #22c55e" : "none",
-      }}
-    />
+  <span className={`ov-estat ${active ? "ov-estat--up" : "ov-estat--down"}`}>
+    <span className="ov-estat-dot" />
     {active ? "Active" : "Down"}
   </span>
 );
@@ -93,90 +77,73 @@ const EdgeRow = ({
   assignable,
   choice,
   setChoice,
-}) => (
-  <div
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: "0.9rem",
-      flexWrap: "wrap",
-      padding: "0.6rem 0.75rem",
-      borderTop: "1px solid rgba(148,163,184,0.1)",
-    }}
-  >
-    <span style={{ fontSize: "1rem" }} aria-hidden="true">
-      🔌
-    </span>
-    <div style={{ minWidth: 150, flex: "1 1 150px" }}>
-      <strong style={{ fontSize: "0.85rem" }}>
-        {e.hostname || shortId(e.edge_id)}
-      </strong>
-      <div style={{ fontSize: "0.68rem", color: "#9ca3af" }}>
-        {e.machine_id || shortId(e.edge_id)} · seen{" "}
-        {relTime(e.last_telemetry_at)}
-      </div>
-    </div>
-    <StatusPill active={isEdgeActive(e)} />
-    <span
-      style={{
-        fontFamily: "monospace",
-        fontSize: "0.78rem",
-        color: "#cbd5f5",
-        minWidth: 64,
-      }}
-    >
-      {e.dhe_version ? `v${e.dhe_version}` : "—"}
-    </span>
-    <button
-      type="button"
-      className="dhc-button-base dhc-button-ghost"
-      disabled
-      title="Firmware updates from the Portal are coming soon"
-      style={{ opacity: 0.45, cursor: "not-allowed" }}
-    >
-      Update
-    </button>
-    {assignable && (
-      <span style={{ display: "inline-flex", gap: "0.4rem" }}>
-        <select
-          className="dhc-form-input"
-          style={{ maxWidth: 200, display: "inline-block" }}
-          value={choice[e.edge_id] ?? ""}
-          onChange={(ev) =>
-            setChoice((c) => ({ ...c, [e.edge_id]: ev.target.value }))
-          }
-        >
-          <option value="">— assign to home —</option>
-          {homes.map((h) => (
-            <option key={h.smartHomeId} value={h.smartHomeId}>
-              {h.smartHomeId}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className="dhc-button-base dhc-button-primary"
-          disabled={busy === e.edge_id || !choice[e.edge_id]}
-          onClick={() => onAssign(e.edge_id, choice[e.edge_id])}
-        >
-          {busy === e.edge_id ? "…" : "Assign"}
-        </button>
+}) => {
+  const added = relTime(e.linked_at);
+  return (
+    <div className="ov-edge">
+      <span style={{ fontSize: "1rem" }} aria-hidden="true">
+        🔌
       </span>
-    )}
-    {!assignable && (
+      <div className="ov-edge-id">
+        <strong>{e.hostname || shortId(e.edge_id)}</strong>
+        <div>
+          {e.machine_id || shortId(e.edge_id)}
+          {added ? ` · added ${added}` : ""}
+        </div>
+      </div>
+      <StatusPill active={isEdgeActive(e)} />
+      <span className="ov-edge-ver">
+        {e.dhe_version ? `v${e.dhe_version}` : "—"}
+      </span>
       <button
         type="button"
-        className="dhc-button-base dhc-button-ghost"
-        disabled={busy === e.edge_id}
-        onClick={() => onAssign(e.edge_id, null)}
-        title="Unassign this edge from the home"
-        style={{ marginLeft: "auto", fontSize: "0.75rem" }}
+        className="ov-btn ov-btn--ghost"
+        disabled
+        title="Firmware updates from the Portal are coming soon"
       >
-        {busy === e.edge_id ? "…" : "Unassign"}
+        Update
       </button>
-    )}
-  </div>
-);
+      {assignable && (
+        <span style={{ display: "inline-flex", gap: "0.4rem" }}>
+          <select
+            className="ov-input"
+            value={choice[e.edge_id] ?? ""}
+            onChange={(ev) =>
+              setChoice((c) => ({ ...c, [e.edge_id]: ev.target.value }))
+            }
+          >
+            <option value="">— assign to home —</option>
+            {homes.map((h) => (
+              <option key={h.smartHomeId} value={h.smartHomeId}>
+                {h.smartHomeId}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="ov-btn ov-btn--primary"
+            disabled={busy === e.edge_id || !choice[e.edge_id]}
+            onClick={() => onAssign(e.edge_id, choice[e.edge_id])}
+          >
+            {busy === e.edge_id ? "…" : "Assign"}
+          </button>
+        </span>
+      )}
+      {!assignable && (
+        <button
+          type="button"
+          className="ov-btn ov-btn--ghost"
+          disabled={busy === e.edge_id}
+          onClick={() => onAssign(e.edge_id, null)}
+          title="Unassign this edge from the home"
+          style={{ marginLeft: "auto" }}
+        >
+          {busy === e.edge_id ? "…" : "Unassign"}
+        </button>
+      )}
+    </div>
+  );
+};
 
 const FleetManager = () => {
   const auth = useAuth();
@@ -295,20 +262,12 @@ const FleetManager = () => {
       .join(", ") || "—";
 
   return (
-    <div className="dhc-manager-list">
+    <>
       {!showForm && (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            gap: "0.75rem",
-            marginBottom: "1rem",
-          }}
-        >
+        <div className="ov-toolbar">
           <button
             type="button"
-            className="dhc-button-primary"
+            className="ov-btn ov-btn--primary"
             onClick={() => {
               setEditingItem(null);
               setShowForm(true);
@@ -334,10 +293,8 @@ const FleetManager = () => {
         </div>
       )}
 
-      {error && (
-        <p style={{ color: "#fca5a5", fontSize: "0.85rem" }}>{error}</p>
-      )}
-      {message && <p className="dhc-message">{message}</p>}
+      {error && <p className="ov-err">{error}</p>}
+      {message && <p className="ov-msg">{message}</p>}
 
       {showForm && (
         <div style={{ marginBottom: "1.5rem" }}>
@@ -353,9 +310,9 @@ const FleetManager = () => {
       )}
 
       {loading ? (
-        <p style={{ fontSize: "0.85rem", color: "#9ca3af" }}>Loading…</p>
+        <p style={{ fontSize: "0.85rem", color: "#8a958f" }}>Loading…</p>
       ) : homes.length === 0 ? (
-        <p style={{ color: "#9ca3af" }}>
+        <p style={{ color: "#8a958f" }}>
           {authState === "authenticated"
             ? "No DigitalHomes yet. Click + Create DigitalHome to start."
             : "Sign in to create and manage your DigitalHomes."}
@@ -365,49 +322,25 @@ const FleetManager = () => {
           const isActive = activeHome?.id === home.smartHomeId;
           const homeEdges = edgesByHome[home.smartHomeId] || [];
           return (
-            <div
-              key={home.smartHomeId}
-              style={{
-                border: "1px solid #2b3346",
-                borderRadius: 10,
-                marginBottom: "1rem",
-                overflow: "hidden",
-                background: "rgba(148,163,184,0.03)",
-              }}
-            >
-              {/* home header */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.9rem",
-                  flexWrap: "wrap",
-                  padding: "0.8rem 0.9rem",
-                }}
-              >
+            <div key={home.smartHomeId} className="ov-panel">
+              <div className="ov-home-head">
                 <button
                   type="button"
-                  className={`dhc-home-pick${
-                    isActive ? " dhc-home-pick--active" : ""
-                  }`}
+                  className={`ov-pick${isActive ? " ov-pick--active" : ""}`}
                   onClick={() => setActiveHome(home.smartHomeId)}
                 >
-                  <span className="dhc-home-pick-check" aria-hidden="true">
+                  <span className="ov-pick-check" aria-hidden="true">
                     {isActive ? "✓" : ""}
                   </span>
-                  <span className="dhc-home-pick-id">{home.smartHomeId}</span>
+                  {home.smartHomeId}
                 </button>
-                <span
-                  style={{ fontSize: "0.82rem", color: "#cbd5f5", flex: 1 }}
-                >
+                <span className="ov-home-addr">
                   {formatAddress(home)} · {home.country}
                 </span>
-                <span className="dhc-nav-pill">
-                  {home.isDemo ? "Demo" : "Real"}
-                </span>
+                <span className="ov-pill">{home.isDemo ? "Demo" : "Real"}</span>
                 <button
                   type="button"
-                  className="dhc-button-ghost"
+                  className="ov-btn ov-btn--ghost"
                   onClick={() => {
                     setEditingItem(home);
                     setShowForm(true);
@@ -417,13 +350,12 @@ const FleetManager = () => {
                 </button>
                 <button
                   type="button"
-                  className="dhc-button-danger"
+                  className="ov-btn ov-btn--danger"
                   onClick={() => handleDelete(home)}
                 >
                   Delete
                 </button>
               </div>
-              {/* nested edges */}
               {homeEdges.length > 0 ? (
                 homeEdges.map((e) => (
                   <EdgeRow
@@ -434,15 +366,7 @@ const FleetManager = () => {
                   />
                 ))
               ) : (
-                <div
-                  style={{
-                    padding: "0.55rem 0.9rem",
-                    borderTop: "1px solid rgba(148,163,184,0.1)",
-                    fontSize: "0.78rem",
-                    color: "#6b7280",
-                    fontStyle: "italic",
-                  }}
-                >
+                <div className="ov-noedge">
                   No edge paired — pair it from the edge box.
                 </div>
               )}
@@ -451,24 +375,9 @@ const FleetManager = () => {
         })
       )}
 
-      {/* unassigned edges */}
       {unassigned.length > 0 && (
-        <div
-          style={{
-            border: "1px dashed #3b4252",
-            borderRadius: 10,
-            marginTop: "1.5rem",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              padding: "0.7rem 0.9rem",
-              fontSize: "0.82rem",
-              fontWeight: 600,
-              color: "#f59e0b",
-            }}
-          >
+        <div className="ov-unassigned">
+          <div className="ov-unassigned-head">
             Unassigned edges ({unassigned.length}) — assign each to one of your
             homes
           </div>
@@ -486,7 +395,7 @@ const FleetManager = () => {
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 };
 

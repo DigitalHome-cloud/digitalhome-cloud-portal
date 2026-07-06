@@ -528,3 +528,206 @@
     max-width: 320px;
   }
 }
+
+/* ── content pages inside the shell (non-hero, e.g. Fleet) ── */
+.ov-page {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px 30px 40px;
+}
+.ov-page-head {
+  margin-bottom: 18px;
+}
+.ov-page-title {
+  font: 600 20px "IBM Plex Sans";
+  margin: 0 0 6px;
+}
+.ov-page-sub {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ov-muted);
+  max-width: 640px;
+}
+.ov-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.ov-msg {
+  color: var(--ov-green);
+  font-size: 0.82rem;
+}
+.ov-err {
+  color: #e08a8a;
+  font-size: 0.82rem;
+}
+
+/* buttons */
+.ov-btn {
+  font: 600 11.5px "IBM Plex Sans";
+  border-radius: 8px;
+  padding: 7px 13px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--ov-text);
+}
+.ov-btn--primary {
+  background: var(--ov-green);
+  color: var(--ov-rail);
+}
+.ov-btn--primary:hover:not(:disabled) {
+  background: #7fbe8e;
+}
+.ov-btn--ghost {
+  border-color: var(--ov-line-2);
+  color: var(--ov-muted);
+}
+.ov-btn--ghost:hover:not(:disabled) {
+  color: var(--ov-text);
+  border-color: rgba(120, 140, 130, 0.55);
+}
+.ov-btn--danger {
+  border-color: rgba(224, 102, 102, 0.4);
+  color: #e07a7a;
+}
+.ov-btn--danger:hover:not(:disabled) {
+  background: rgba(224, 102, 102, 0.12);
+}
+.ov-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.ov-input {
+  background: #0d0f0e;
+  border: 1px solid var(--ov-line-2);
+  color: var(--ov-text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  max-width: 220px;
+}
+.ov-pill {
+  font: 500 10px "IBM Plex Mono";
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(120, 140, 130, 0.14);
+  color: var(--ov-muted);
+}
+
+/* home panel + nested edges */
+.ov-panel {
+  border: 1px solid rgba(120, 140, 130, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.ov-home-head {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 0.95rem;
+}
+.ov-home-addr {
+  font-size: 0.82rem;
+  color: var(--ov-muted);
+  flex: 1;
+  min-width: 140px;
+}
+.ov-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(120, 140, 130, 0.1);
+  border: 1px solid var(--ov-line-2);
+  color: var(--ov-text);
+  border-radius: 8px;
+  padding: 6px 11px;
+  font: 600 12.5px "IBM Plex Sans";
+  cursor: pointer;
+}
+.ov-pick--active {
+  background: rgba(111, 174, 126, 0.16);
+  border-color: rgba(111, 174, 126, 0.5);
+  color: #cfefd6;
+}
+.ov-pick-check {
+  color: var(--ov-green);
+  width: 12px;
+}
+.ov-edge {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.95rem;
+  border-top: 1px solid rgba(120, 140, 130, 0.12);
+}
+.ov-edge-id {
+  min-width: 150px;
+  flex: 1 1 150px;
+}
+.ov-edge-id strong {
+  font-size: 0.85rem;
+}
+.ov-edge-id div {
+  font-size: 0.68rem;
+  color: var(--ov-dim);
+}
+.ov-edge-ver {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  color: #b9c4be;
+  min-width: 60px;
+}
+.ov-estat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.ov-estat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.ov-estat--up {
+  color: #6fd48a;
+}
+.ov-estat--up .ov-estat-dot {
+  background: var(--ov-green);
+  box-shadow: 0 0 6px var(--ov-green);
+}
+.ov-estat--down {
+  color: var(--ov-muted);
+}
+.ov-estat--down .ov-estat-dot {
+  background: #6b7280;
+}
+.ov-noedge {
+  padding: 0.55rem 0.95rem;
+  border-top: 1px solid rgba(120, 140, 130, 0.12);
+  font-size: 0.76rem;
+  color: var(--ov-dim);
+  font-style: italic;
+}
+.ov-unassigned {
+  border: 1px dashed rgba(120, 140, 130, 0.35);
+  border-radius: 12px;
+  margin-top: 1.4rem;
+  overflow: hidden;
+}
+.ov-unassigned-head {
+  padding: 0.7rem 0.95rem;
+  font: 600 0.82rem "IBM Plex Sans";
+  color: var(--ov-amber);
+}

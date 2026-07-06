@@ -1,12 +1,22 @@
 import * as React from "react";
 import { graphql, navigate } from "gatsby";
-import Layout from "../components/Layout";
+import OverviewShell from "../components/OverviewShell";
 import FleetManager from "../components/FleetManager";
 import { useTranslation } from "gatsby-plugin-react-i18next";
 import { useAuth } from "../context/AuthContext";
 
-// Fleet — Digital Homes and their paired edges in one place. Replaces the
-// separate Manager and Edges screens. Pairing is initiated from the edge box.
+import "@fontsource/ibm-plex-sans/300.css";
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-sans/700.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
+import "@fontsource/ibm-plex-mono/600.css";
+import "../styles/overview.css";
+
+// Fleet — Digital Homes and their paired edges in one place, inside the Overview
+// left-rail shell. Replaces the separate Manager and Edges screens.
 const FleetPage = () => {
   const { t } = useTranslation();
   const { isAuthenticated, isLoading } = useAuth();
@@ -16,22 +26,22 @@ const FleetPage = () => {
   }, [isLoading, isAuthenticated]);
 
   return (
-    <Layout>
-      <main className="dhc-main">
-        <section className="dhc-hero">
-          <h1 className="dhc-hero-title">
+    <OverviewShell active="fleet" title="Fleet">
+      <div className="ov-page">
+        <div className="ov-page-head">
+          <h1 className="ov-page-title">
             {t("fleet.title", { defaultValue: "Fleet" })}
           </h1>
-          <p className="dhc-hero-subtitle">
+          <p className="ov-page-sub">
             {t("fleet.subtitle", {
               defaultValue:
-                "Your Digital Homes and the edge boxes paired to them. Each home lists its edge with live status and firmware version. Pair a new edge from the box itself.",
+                "Your Digital Homes and the edge boxes paired to them. Each home lists its edge with status and firmware version. Pair a new edge from the box itself.",
             })}
           </p>
-        </section>
+        </div>
         <FleetManager />
-      </main>
-    </Layout>
+      </div>
+    </OverviewShell>
   );
 };
 

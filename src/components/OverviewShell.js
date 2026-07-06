@@ -141,7 +141,11 @@ const NavLink = ({
   );
 };
 
-const OverviewShell = ({ children }) => {
+const OverviewShell = ({
+  children,
+  active = "overview",
+  title = "Overview",
+}) => {
   const { isAuthenticated, user, signOut } = useAuth();
   const { activeHome } = useSmartHome();
   const { tier } = useTier();
@@ -176,7 +180,12 @@ const OverviewShell = ({ children }) => {
 
         <div className="ov-nav">
           <div className="ov-group">Explore</div>
-          <NavLink icon={IC.home} label="Overview" to="/" active />
+          <NavLink
+            icon={IC.home}
+            label="Overview"
+            to="/"
+            active={active === "overview"}
+          />
           <NavLink
             icon={IC.catalog}
             label="Catalog"
@@ -203,6 +212,7 @@ const OverviewShell = ({ children }) => {
             icon={IC.fleet}
             label="Fleet"
             to="/fleet"
+            active={active === "fleet"}
             locked={!isAuthenticated}
           />
 
@@ -255,7 +265,7 @@ const OverviewShell = ({ children }) => {
       <div className="ov-main">
         <div className="ov-topbar">
           <div className="ov-topbar-title">
-            <b>Overview</b>
+            <b>{title}</b>
             <span className="ov-crumb">
               /{" "}
               {isAuthenticated
