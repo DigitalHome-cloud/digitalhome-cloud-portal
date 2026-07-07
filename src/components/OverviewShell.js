@@ -224,7 +224,12 @@ const OverviewShell = ({
           <div className="ov-group">Account</div>
           {isAuthenticated ? (
             <>
-              <NavLink icon={IC.account} label="Account" to="/userprofile" />
+              <NavLink
+                icon={IC.account}
+                label="Account"
+                to="/userprofile"
+                active={active === "account"}
+              />
               <NavLink icon={IC.signOut} label="Sign out" onClick={signOut} />
             </>
           ) : (

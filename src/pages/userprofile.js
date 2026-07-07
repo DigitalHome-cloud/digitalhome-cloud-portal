@@ -1,11 +1,11 @@
 import * as React from "react";
-import Layout from "../components/Layout";
-import { useTranslation } from "gatsby-plugin-react-i18next";
 import { graphql, navigate } from "gatsby";
+import { useTranslation } from "gatsby-plugin-react-i18next";
+import OverviewShell from "../components/OverviewShell";
 import { useAuth } from "../context/AuthContext";
+import { useTier } from "../utils/useTier";
 import { generateClient } from "aws-amplify/api";
-
-// These come from `amplify codegen`
+import { fetchUserAttributes, updateUserAttributes } from "aws-amplify/auth";
 import { listUserProfiles } from "../graphql/queries";
 import {
   createUserProfile,
@@ -13,147 +13,179 @@ import {
   deleteUserProfile,
 } from "../graphql/mutations";
 
+import "@fontsource/ibm-plex-sans/300.css";
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-sans/700.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
+import "@fontsource/ibm-plex-mono/600.css";
+import "../styles/overview.css";
+
+// Profile — inside the Overview shell. Shows identity + group access + all
+// Cognito attributes, lets the user edit the standard mutable attributes (name,
+// given/family name, locale, phone), and keeps the app-level preference
+// (marketing opt-in) stored on the UserProfile model.
+
 const client = generateClient();
+
+// Standard Cognito attributes that are mutable and safe to edit here. Email is
+// the sign-in alias (verification flow) so it's shown read-only, not edited.
+const EDITABLE = [
+  ["name", "Name"],
+  ["given_name", "First name"],
+  ["family_name", "Last name"],
+  ["locale", "Locale"],
+  ["phone_number", "Phone (E.164, e.g. +49…)"],
+];
+
+const muted = { color: "var(--ov-muted)" };
+const mono = { fontFamily: "'IBM Plex Mono', monospace", fontSize: "0.78rem" };
+const cardStyle = { marginBottom: "1.2rem", flex: "unset" };
+
+const Field = ({ label, value, onChange, placeholder }) => (
+  <label
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      gap: "0.3rem",
+      fontSize: "0.78rem",
+      color: "var(--ov-muted)",
+    }}
+  >
+    {label}
+    <input
+      className="ov-input"
+      style={{ maxWidth: 340 }}
+      value={value}
+      placeholder={placeholder}
+      onChange={onChange}
+    />
+  </label>
+);
 
 const UserProfilePage = () => {
   const { t } = useTranslation();
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user, groups, reloadSession } = useAuth();
+  const { tier } = useTier();
+
+  const [attrs, setAttrs] = React.useState(null);
+  const [attrForm, setAttrForm] = React.useState({});
+  const [savingAttrs, setSavingAttrs] = React.useState(false);
 
   const [profile, setProfile] = React.useState(null);
-  const [form, setForm] = React.useState({
-    displayName: "",
-    email: "",
-    locale: "",
-    marketingOptIn: false,
-  });
-  const [loadingProfile, setLoadingProfile] = React.useState(true);
-  const [saving, setSaving] = React.useState(false);
+  const [marketingOptIn, setMarketingOptIn] = React.useState(false);
+  const [savingPref, setSavingPref] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
+
   const [error, setError] = React.useState("");
   const [message, setMessage] = React.useState("");
 
-  // Redirect to sign-in if not authenticated
   React.useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate("/signin");
-    }
+    if (!isLoading && !isAuthenticated) navigate("/signin");
   }, [isLoading, isAuthenticated]);
 
-  // Load profile for current user
+  // Cognito attributes
   React.useEffect(() => {
-    const load = async () => {
-      if (!isAuthenticated || !user) {
-        setLoadingProfile(false);
-        return;
-      }
-      setLoadingProfile(true);
-      setError("");
-      setMessage("");
+    if (!isAuthenticated) return;
+    fetchUserAttributes()
+      .then((a) => {
+        setAttrs(a);
+        const f = {};
+        for (const [k] of EDITABLE) f[k] = a[k] || "";
+        setAttrForm(f);
+      })
+      .catch((e) => {
+        console.error("fetchUserAttributes failed", e);
+        setError("Could not load account attributes.");
+      });
+  }, [isAuthenticated]);
 
-      try {
-        const username = user.username; // matches identityClaim "cognito:username"
-        const result = await client.graphql({
-          query: listUserProfiles,
-          variables: {
-            filter: { owner: { eq: username } },
-            limit: 1,
-          },
-          authMode: "userPool",
-        });
-
-        const items = result?.data?.listUserProfiles?.items || [];
-        const existing = items[0] || null;
-        setProfile(existing);
-
-        setForm({
-          displayName: existing?.displayName || "",
-          email: existing?.email || "",
-          locale: existing?.locale || "",
-          marketingOptIn: !!existing?.marketingOptIn,
-        });
-      } catch (err) {
-        console.error("Error loading profile", err);
-        setError("Failed to load profile.");
-      } finally {
-        setLoadingProfile(false);
-      }
-    };
-
-    if (isAuthenticated && user) {
-      load();
-    }
+  // App profile (DDB UserProfile)
+  React.useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    client
+      .graphql({
+        query: listUserProfiles,
+        variables: { filter: { owner: { eq: user.username } }, limit: 1 },
+        authMode: "userPool",
+      })
+      .then((r) => {
+        const p = r?.data?.listUserProfiles?.items?.[0] || null;
+        setProfile(p);
+        setMarketingOptIn(!!p?.marketingOptIn);
+      })
+      .catch((e) => console.error("listUserProfiles failed", e));
   }, [isAuthenticated, user]);
 
-  const handleChange = (field) => (event) => {
-    const value =
-      field === "marketingOptIn" ? event.target.checked : event.target.value;
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSave = async (event) => {
-    event.preventDefault();
-    if (!user) return;
-    setSaving(true);
+  const saveAttrs = async () => {
+    setSavingAttrs(true);
     setError("");
     setMessage("");
-
     try {
-      let result;
-      if (profile?.id) {
-        // Update existing
-        result = await client.graphql({
-          query: updateUserProfile,
-          variables: {
-            input: {
-              id: profile.id,
-              displayName: form.displayName || null,
-              email: form.email || null,
-              locale: form.locale || null,
-              marketingOptIn: form.marketingOptIn,
-            },
-          },
-          authMode: "userPool",
-        });
-      } else {
-        // Create new
-        result = await client.graphql({
-          query: createUserProfile,
-          variables: {
-            input: {
-              // owner gets auto-filled by @auth rule
-              displayName: form.displayName || null,
-              email: form.email || null,
-              locale: form.locale || null,
-              marketingOptIn: form.marketingOptIn,
-            },
-          },
-          authMode: "userPool",
-        });
+      const userAttributes = {};
+      for (const [k] of EDITABLE) {
+        const v = (attrForm[k] || "").trim();
+        if (v !== (attrs?.[k] || "")) userAttributes[k] = v;
       }
-
-      const saved = result.data.updateUserProfile || result.data.createUserProfile;
-      setProfile(saved);
-      setMessage(t("userprofile.saved", { defaultValue: "Profile saved." }));
-    } catch (err) {
-      console.error("Error saving profile", err);
-      setError("Failed to save profile.");
+      if (!Object.keys(userAttributes).length) {
+        setMessage("No attribute changes.");
+        setSavingAttrs(false);
+        return;
+      }
+      await updateUserAttributes({ userAttributes });
+      setMessage("Account attributes updated.");
+      if (reloadSession) await reloadSession();
+      setAttrs(await fetchUserAttributes());
+    } catch (e) {
+      console.error("updateUserAttributes failed", e);
+      setError("Could not update attributes: " + (e?.message || String(e)));
     } finally {
-      setSaving(false);
+      setSavingAttrs(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!profile?.id) return;
-    if (!window.confirm(t("userprofile.confirmDelete", {
-      defaultValue: "Delete your profile? This cannot be undone.",
-    }))) {
-      return;
+  const savePref = async () => {
+    setSavingPref(true);
+    setError("");
+    setMessage("");
+    try {
+      if (profile?.id) {
+        const r = await client.graphql({
+          query: updateUserProfile,
+          variables: { input: { id: profile.id, marketingOptIn } },
+          authMode: "userPool",
+        });
+        setProfile(r.data.updateUserProfile);
+      } else {
+        const r = await client.graphql({
+          query: createUserProfile,
+          variables: { input: { marketingOptIn } },
+          authMode: "userPool",
+        });
+        setProfile(r.data.createUserProfile);
+      }
+      setMessage("Preferences saved.");
+    } catch (e) {
+      console.error("save preferences failed", e);
+      setError("Could not save preferences.");
+    } finally {
+      setSavingPref(false);
     }
+  };
 
+  const del = async () => {
+    if (!profile?.id) return;
+    if (
+      !window.confirm(
+        "Delete your app profile record? Your account and sign-in are not affected."
+      )
+    )
+      return;
     setDeleting(true);
     setError("");
     setMessage("");
-
     try {
       await client.graphql({
         query: deleteUserProfile,
@@ -161,137 +193,204 @@ const UserProfilePage = () => {
         authMode: "userPool",
       });
       setProfile(null);
-      setForm({
-        displayName: "",
-        email: "",
-        locale: "",
-        marketingOptIn: false,
-      });
-      setMessage(t("userprofile.deleted", { defaultValue: "Profile deleted." }));
-    } catch (err) {
-      console.error("Error deleting profile", err);
-      setError("Failed to delete profile.");
+      setMarketingOptIn(false);
+      setMessage("App profile deleted.");
+    } catch (e) {
+      console.error("delete profile failed", e);
+      setError("Could not delete profile.");
     } finally {
       setDeleting(false);
     }
   };
 
-  const handleCheckout = () => {
-    // Placeholder: hook this into your payment / plan selection flow later.
-    alert("Checkout flow not implemented yet.");
-  };
-
-  const title = t("userprofile.title", { defaultValue: "Your profile" });
+  const sub = attrs?.sub || user?.idTokenPayload?.sub;
+  const email = attrs?.email || user?.idTokenPayload?.email;
+  const verified =
+    attrs?.email_verified === "true" || attrs?.email_verified === true;
 
   return (
-    <Layout>
-      <main className="dhc-main">
-        <section className="dhc-section dhc-section-profile">
-          <h1 className="dhc-page-title">{title}</h1>
-          <p className="dhc-page-subtitle">
+    <OverviewShell active="account" title="Profile">
+      <div className="ov-page">
+        <div className="ov-page-head">
+          <h1 className="ov-page-title">
+            {t("userprofile.title", { defaultValue: "Your profile" })}
+          </h1>
+          <p className="ov-page-sub">
             {t("userprofile.subtitle", {
               defaultValue:
-                "Review and update your profile information. You can also delete your profile or start a checkout.",
+                "Your account identity, group access, and editable Cognito attributes.",
             })}
           </p>
+        </div>
 
-          {loadingProfile || isLoading ? (
-            <p>{t("userprofile.loading", { defaultValue: "Loading profile..." })}</p>
-          ) : (
-            <form className="dhc-profile-form" onSubmit={handleSave}>
-              {error && <p className="dhc-error">{error}</p>}
-              {message && <p className="dhc-message">{message}</p>}
+        {error && <p className="ov-err">{error}</p>}
+        {message && <p className="ov-msg">{message}</p>}
 
-              <div className="dhc-form-row">
-                <label>
-                  {t("userprofile.displayName", { defaultValue: "Display name" })}
-                  <input
-                    type="text"
-                    value={form.displayName}
-                    onChange={handleChange("displayName")}
-                  />
-                </label>
-              </div>
-
-              <div className="dhc-form-row">
-                <label>
-                  {t("userprofile.email", { defaultValue: "Email" })}
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={handleChange("email")}
-                  />
-                </label>
-              </div>
-
-              <div className="dhc-form-row">
-                <label>
-                  {t("userprofile.locale", { defaultValue: "Preferred language / locale" })}
-                  <input
-                    type="text"
-                    value={form.locale}
-                    onChange={handleChange("locale")}
-                    placeholder="en-US, de-DE, fr-FR…"
-                  />
-                </label>
-              </div>
-
-              <div className="dhc-form-row dhc-form-row--checkbox">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={form.marketingOptIn}
-                    onChange={handleChange("marketingOptIn")}
-                  />
-                  {t("userprofile.marketingOptIn", {
-                    defaultValue: "I’d like to receive updates and news.",
-                  })}
-                </label>
-              </div>
-
-              <div className="dhc-profile-actions">
-                <button
-                  type="submit"
-                  className="dhc-button-base dhc-button-primary"
-                  disabled={saving}
+        {/* Identity & access */}
+        <div className="ov-info-card" style={cardStyle}>
+          <h3 style={{ marginTop: 0, fontSize: "0.95rem" }}>
+            Identity &amp; access
+          </h3>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "140px 1fr",
+              gap: "0.5rem 1rem",
+              fontSize: "0.85rem",
+              alignItems: "center",
+            }}
+          >
+            <span style={muted}>Username</span>
+            <span>{user?.username || "—"}</span>
+            <span style={muted}>User ID</span>
+            <span style={mono}>{sub || "—"}</span>
+            <span style={muted}>Email</span>
+            <span>
+              {email || "—"}{" "}
+              {verified ? (
+                <span
+                  className="ov-estat ov-estat--up"
+                  style={{ marginLeft: 6 }}
                 >
-                  {saving
-                    ? t("userprofile.saving", { defaultValue: "Saving…" })
-                    : t("userprofile.save", { defaultValue: "Save profile" })}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleCheckout}
-                  className="dhc-button-base dhc-button-secondary"
-                >
-                  {t("userprofile.checkout", { defaultValue: "Checkout" })}
-                </button>
-
-                {profile?.id && (
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    className="dhc-button-base dhc-button-danger"
-                    disabled={deleting}
+                  <span className="ov-estat-dot" />
+                  verified
+                </span>
+              ) : (
+                <span style={{ color: "#f59e0b" }}>unverified</span>
+              )}
+            </span>
+            <span style={muted}>Tier</span>
+            <span>
+              <span className="ov-pill">{tier || "—"}</span>
+            </span>
+            <span style={muted}>Groups</span>
+            <span>
+              {groups?.length ? (
+                groups.map((g) => (
+                  <span
+                    key={g}
+                    className="ov-pill"
+                    style={{ marginRight: "0.3rem" }}
                   >
-                    {deleting
-                      ? t("userprofile.deleting", { defaultValue: "Deleting…" })
-                      : t("userprofile.delete", { defaultValue: "Delete profile" })}
-                  </button>
-                )}
-              </div>
-            </form>
-          )}
-        </section>
-      </main>
-    </Layout>
+                    {g}
+                  </span>
+                ))
+              ) : (
+                <span style={muted}>none</span>
+              )}
+            </span>
+          </div>
+        </div>
+
+        {/* Editable Cognito attributes */}
+        <div className="ov-info-card" style={cardStyle}>
+          <h3 style={{ marginTop: 0, fontSize: "0.95rem" }}>
+            Account attributes
+          </h3>
+          <p style={{ ...muted, fontSize: "0.78rem", margin: "0 0 0.8rem" }}>
+            Stored in Cognito. Email is your sign-in and is managed separately.
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.9rem" }}>
+            {EDITABLE.map(([k, label]) => (
+              <Field
+                key={k}
+                label={label}
+                value={attrForm[k] ?? ""}
+                placeholder={k === "phone_number" ? "+491234567890" : ""}
+                onChange={(e) =>
+                  setAttrForm((f) => ({ ...f, [k]: e.target.value }))
+                }
+              />
+            ))}
+          </div>
+          <div style={{ marginTop: "0.9rem" }}>
+            <button
+              type="button"
+              className="ov-btn ov-btn--primary"
+              disabled={savingAttrs || !attrs}
+              onClick={saveAttrs}
+            >
+              {savingAttrs ? "Saving…" : "Save attributes"}
+            </button>
+          </div>
+        </div>
+
+        {/* All attributes (read-only details) */}
+        {attrs && (
+          <div className="ov-info-card" style={cardStyle}>
+            <h3 style={{ marginTop: 0, fontSize: "0.95rem" }}>
+              All attributes
+            </h3>
+            <div className="ov-tablewrap">
+              <table className="ov-table">
+                <tbody>
+                  {Object.entries(attrs).map(([k, v]) => (
+                    <tr key={k}>
+                      <td
+                        style={{
+                          ...mono,
+                          color: "var(--ov-muted)",
+                          width: 200,
+                        }}
+                      >
+                        {k}
+                      </td>
+                      <td style={mono}>{String(v)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* App preferences */}
+        <div className="ov-info-card" style={{ flex: "unset" }}>
+          <h3 style={{ marginTop: 0, fontSize: "0.95rem" }}>App preferences</h3>
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              fontSize: "0.85rem",
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={marketingOptIn}
+              onChange={(e) => setMarketingOptIn(e.target.checked)}
+            />
+            I&rsquo;d like to receive product updates and news.
+          </label>
+          <div style={{ marginTop: "0.9rem", display: "flex", gap: "0.5rem" }}>
+            <button
+              type="button"
+              className="ov-btn ov-btn--primary"
+              disabled={savingPref}
+              onClick={savePref}
+            >
+              {savingPref ? "Saving…" : "Save preferences"}
+            </button>
+            {profile?.id && (
+              <button
+                type="button"
+                className="ov-btn ov-btn--danger"
+                disabled={deleting}
+                onClick={del}
+              >
+                {deleting ? "Deleting…" : "Delete app profile"}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </OverviewShell>
   );
 };
 
 export default UserProfilePage;
 
-// 👇 Required for gatsby-plugin-react-i18next
 export const query = graphql`
   query UserProfilePageQuery($language: String!) {
     locales: allLocale(filter: { language: { eq: $language } }) {
