@@ -1,0 +1,819 @@
+/* Overview landing — self-contained theme, scoped under .ov so it never leaks
+   into the rest of the Portal (which keeps its slate/blue theme). Ported from the
+   Claude Design "Portal Dashboard Directions". Fonts: IBM Plex Sans/Mono via
+   @fontsource (imported in index.js). */
+
+.ov {
+  --ov-bg: #0d0f0e;
+  --ov-rail: #0a0c0b;
+  --ov-panel: #111614;
+  --ov-text: #dfe7e2;
+  --ov-muted: #8a958f;
+  --ov-dim: #4d5a53;
+  --ov-line: rgba(120, 140, 130, 0.14);
+  --ov-line-2: rgba(120, 140, 130, 0.3);
+  --ov-green: #6fae7e;
+  --ov-cyan: #62b6c9;
+  --ov-purple: #8a8fd6;
+  --ov-amber: #c9954f;
+
+  display: flex;
+  min-height: 100vh;
+  background: var(--ov-bg);
+  color: var(--ov-text);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.ov *,
+.ov *::before,
+.ov *::after {
+  box-sizing: border-box;
+}
+
+/* ── left rail ── */
+.ov-rail {
+  width: 232px;
+  flex: none;
+  background: var(--ov-rail);
+  border-right: 1px solid var(--ov-line);
+  display: flex;
+  flex-direction: column;
+  padding: 18px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.ov-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px 18px;
+  border-bottom: 1px solid rgba(120, 140, 130, 0.1);
+}
+.ov-brand-mark {
+  width: 31px;
+  height: 31px;
+  border-radius: 8px;
+  background: var(--ov-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ov-rail);
+  flex: none;
+}
+.ov-brand-text {
+  font: 600 13.5px "IBM Plex Sans";
+}
+.ov-brand-text b {
+  color: var(--ov-green);
+  font-weight: 600;
+}
+
+.ov-nav {
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+.ov-group {
+  font: 500 9.5px "IBM Plex Mono";
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ov-dim);
+  padding: 14px 10px 6px;
+}
+.ov-group:first-child {
+  padding-top: 6px;
+}
+.ov-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--ov-muted);
+  font-size: 12.5px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+.ov-link svg:first-child {
+  flex: none;
+}
+.ov-link .ov-lock {
+  margin-left: auto;
+}
+.ov-link:hover {
+  color: var(--ov-text);
+  background: rgba(120, 140, 130, 0.08);
+}
+.ov-link--active {
+  color: var(--ov-text);
+  background: rgba(111, 174, 126, 0.14);
+  border-color: rgba(111, 174, 126, 0.3);
+}
+.ov-link--active svg:first-child {
+  stroke: var(--ov-green);
+}
+.ov-link--locked {
+  color: var(--ov-dim);
+  cursor: default;
+}
+.ov-link--locked:hover {
+  color: var(--ov-dim);
+  background: none;
+}
+.ov-link--primary {
+  color: var(--ov-rail);
+  background: var(--ov-green);
+  font-weight: 600;
+}
+.ov-link--primary:hover {
+  color: var(--ov-rail);
+  background: #7fbe8e;
+}
+.ov-link--outline {
+  color: var(--ov-text);
+  border-color: var(--ov-line-2);
+}
+.ov-link--outline:hover {
+  color: var(--ov-text);
+  border-color: rgba(120, 140, 130, 0.55);
+  background: rgba(120, 140, 130, 0.08);
+}
+
+.ov-rail-foot {
+  margin-top: auto;
+  padding: 14px 18px;
+  border-top: 1px solid rgba(120, 140, 130, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.ov-avatar {
+  width: 29px;
+  height: 29px;
+  border-radius: 7px;
+  background: rgba(120, 140, 130, 0.14);
+  border: 1px solid var(--ov-line-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ov-muted);
+  flex: none;
+}
+.ov-foot-name {
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.2;
+  word-break: break-word;
+}
+.ov-foot-sub {
+  font: 500 9px "IBM Plex Mono";
+  letter-spacing: 0.08em;
+  color: var(--ov-muted);
+  text-transform: uppercase;
+}
+
+/* ── main ── */
+.ov-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ov-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 30px;
+  border-bottom: 1px solid var(--ov-line);
+  flex-wrap: wrap;
+}
+.ov-topbar-title {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.ov-topbar-title b {
+  font: 600 15px "IBM Plex Sans";
+}
+.ov-crumb {
+  font: 500 10.5px "IBM Plex Mono";
+  color: var(--ov-dim);
+  letter-spacing: 0.06em;
+}
+.ov-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.ov-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 500 11px "IBM Plex Mono";
+  color: var(--ov-cyan);
+  letter-spacing: 0.04em;
+}
+.ov-status--member {
+  color: var(--ov-green);
+}
+.ov-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+}
+.ov-lang {
+  background: none;
+  border: 1px solid var(--ov-line-2);
+  color: var(--ov-muted);
+  font: 500 10.5px "IBM Plex Mono";
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 7px;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+.ov-lang:hover {
+  color: var(--ov-text);
+  border-color: rgba(120, 140, 130, 0.55);
+}
+
+.ov-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 26px 30px 34px;
+}
+.ov-intro {
+  text-align: center;
+  max-width: 560px;
+  margin-bottom: 14px;
+}
+.ov-eyebrow {
+  font: 500 10px "IBM Plex Mono";
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ov-green);
+  margin-bottom: 11px;
+}
+.ov-title {
+  font: 600 23px/1.25 "IBM Plex Sans";
+  margin: 0 0 9px;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.ov-subtitle {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ov-muted);
+}
+
+/* ── loop ── */
+.ov-loop {
+  position: relative;
+  width: 640px;
+  height: 690px;
+  flex: none;
+}
+.ov-loop-svg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ov-ring {
+  animation: ov-loopDash 40s linear infinite;
+}
+.ov-center {
+  position: absolute;
+  left: 320px;
+  top: 340px;
+  transform: translate(-50%, -50%);
+  width: 176px;
+  height: 176px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%, #141917, #0a0c0b);
+  border: 1.5px solid var(--ov-line-2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 14px;
+  box-shadow: 0 0 0 12px rgba(13, 15, 14, 0.9), 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+.ov-center-icon {
+  color: var(--ov-green);
+  margin-bottom: 9px;
+}
+.ov-center-title {
+  font: 600 14.5px "IBM Plex Sans";
+  margin-bottom: 3px;
+  word-break: break-word;
+}
+.ov-center-sub {
+  font: 500 9.5px "IBM Plex Mono";
+  letter-spacing: 0.06em;
+  color: var(--ov-dim);
+  text-transform: uppercase;
+}
+
+.ov-stage {
+  position: absolute;
+  width: 200px;
+  transform: translate(-50%, -50%);
+}
+.ov-stage--observe {
+  left: 320px;
+  top: 120px;
+  animation: ov-floatIn 0.5s ease-out both;
+}
+.ov-stage--design {
+  left: 540px;
+  top: 340px;
+  animation: ov-floatIn 0.5s ease-out 0.1s both;
+}
+.ov-stage--build {
+  left: 320px;
+  top: 560px;
+  animation: ov-floatIn 0.5s ease-out 0.2s both;
+}
+.ov-stage--run {
+  left: 100px;
+  top: 340px;
+  animation: ov-floatIn 0.5s ease-out 0.3s both;
+}
+
+.ov-card {
+  background: var(--ov-panel);
+  border: 1px solid rgba(120, 140, 130, 0.18);
+  border-radius: 15px;
+  padding: 16px 15px 15px;
+  text-align: center;
+}
+.ov-card--active {
+  border: 1.5px solid rgba(98, 182, 201, 0.55);
+  box-shadow: 0 0 26px rgba(98, 182, 201, 0.14);
+}
+.ov-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 9px;
+}
+.ov-card-title {
+  font: 600 14px "IBM Plex Sans";
+  margin-bottom: 5px;
+}
+.ov-card-desc {
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--ov-muted);
+  margin-bottom: 12px;
+}
+.ov-card-btn {
+  display: block;
+  width: 100%;
+  font: 600 11px "IBM Plex Sans";
+  border-radius: 9px;
+  padding: 9px 12px;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.15s ease;
+}
+/* Observe = cyan filled; the others = colored outline */
+.ov-btn--observe {
+  color: var(--ov-rail);
+  background: var(--ov-cyan);
+}
+.ov-btn--observe:hover {
+  background: #7cc6d8;
+}
+.ov-btn--design {
+  color: #a9adde;
+  background: transparent;
+  border-color: rgba(138, 143, 214, 0.5);
+}
+.ov-btn--design:hover {
+  background: rgba(138, 143, 214, 0.12);
+}
+.ov-btn--build {
+  color: #d4a765;
+  background: transparent;
+  border-color: rgba(201, 149, 79, 0.5);
+}
+.ov-btn--build:hover {
+  background: rgba(201, 149, 79, 0.12);
+}
+.ov-btn--run {
+  color: #8fc79c;
+  background: transparent;
+  border-color: rgba(111, 174, 126, 0.5);
+}
+.ov-btn--run:hover {
+  background: rgba(111, 174, 126, 0.12);
+}
+/* icon tints */
+.ov-ic--observe {
+  background: rgba(98, 182, 201, 0.14);
+  color: var(--ov-cyan);
+}
+.ov-ic--design {
+  background: rgba(138, 143, 214, 0.14);
+  color: var(--ov-purple);
+}
+.ov-ic--build {
+  background: rgba(201, 149, 79, 0.14);
+  color: var(--ov-amber);
+}
+.ov-ic--run {
+  background: rgba(111, 174, 126, 0.14);
+  color: var(--ov-green);
+}
+
+.ov-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  font: 500 11px "IBM Plex Mono";
+  color: var(--ov-dim);
+  letter-spacing: 0.04em;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ov-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ov-legend .ov-sep {
+  color: #2f3a34;
+}
+.ov-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+@keyframes ov-loopDash {
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+@keyframes ov-floatIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ov-ring {
+    animation: none;
+  }
+  .ov-stage {
+    animation: none !important;
+  }
+}
+
+/* ── responsive: stack rail on top, loop into a column ── */
+@media (max-width: 900px) {
+  .ov {
+    flex-direction: column;
+  }
+  .ov-rail {
+    width: 100%;
+    height: auto;
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--ov-line);
+  }
+  .ov-loop {
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .ov-loop-svg {
+    display: none;
+  }
+  .ov-center,
+  .ov-stage {
+    position: static;
+    transform: none;
+    animation: none !important;
+    width: 100%;
+    max-width: 320px;
+  }
+}
+
+/* ── content pages inside the shell (non-hero, e.g. Fleet) ── */
+.ov-page {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px 30px 40px;
+}
+.ov-page-head {
+  margin-bottom: 18px;
+}
+.ov-page-title {
+  font: 600 20px "IBM Plex Sans";
+  margin: 0 0 6px;
+}
+.ov-page-sub {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ov-muted);
+  max-width: 640px;
+}
+.ov-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.ov-msg {
+  color: var(--ov-green);
+  font-size: 0.82rem;
+}
+.ov-err {
+  color: #e08a8a;
+  font-size: 0.82rem;
+}
+
+/* buttons */
+.ov-btn {
+  font: 600 11.5px "IBM Plex Sans";
+  border-radius: 8px;
+  padding: 7px 13px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--ov-text);
+}
+.ov-btn--primary {
+  background: var(--ov-green);
+  color: var(--ov-rail);
+}
+.ov-btn--primary:hover:not(:disabled) {
+  background: #7fbe8e;
+}
+.ov-btn--ghost {
+  border-color: var(--ov-line-2);
+  color: var(--ov-muted);
+}
+.ov-btn--ghost:hover:not(:disabled) {
+  color: var(--ov-text);
+  border-color: rgba(120, 140, 130, 0.55);
+}
+.ov-btn--danger {
+  border-color: rgba(224, 102, 102, 0.4);
+  color: #e07a7a;
+}
+.ov-btn--danger:hover:not(:disabled) {
+  background: rgba(224, 102, 102, 0.12);
+}
+.ov-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.ov-input {
+  background: #0d0f0e;
+  border: 1px solid var(--ov-line-2);
+  color: var(--ov-text);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  max-width: 220px;
+}
+.ov-pill {
+  font: 500 10px "IBM Plex Mono";
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(120, 140, 130, 0.14);
+  color: var(--ov-muted);
+}
+
+/* home panel + nested edges */
+.ov-panel {
+  border: 1px solid rgba(120, 140, 130, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.ov-home-head {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 0.95rem;
+}
+.ov-home-addr {
+  font-size: 0.82rem;
+  color: var(--ov-muted);
+  flex: 1;
+  min-width: 140px;
+}
+.ov-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(120, 140, 130, 0.1);
+  border: 1px solid var(--ov-line-2);
+  color: var(--ov-text);
+  border-radius: 8px;
+  padding: 6px 11px;
+  font: 600 12.5px "IBM Plex Sans";
+  cursor: pointer;
+}
+.ov-pick--active {
+  background: rgba(111, 174, 126, 0.16);
+  border-color: rgba(111, 174, 126, 0.5);
+  color: #cfefd6;
+}
+.ov-pick-check {
+  color: var(--ov-green);
+  width: 12px;
+}
+.ov-edge {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.95rem;
+  border-top: 1px solid rgba(120, 140, 130, 0.12);
+}
+.ov-edge-id {
+  min-width: 150px;
+  flex: 1 1 150px;
+}
+.ov-edge-id strong {
+  font-size: 0.85rem;
+}
+.ov-edge-id div {
+  font-size: 0.68rem;
+  color: var(--ov-dim);
+}
+.ov-edge-ver {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.78rem;
+  color: #b9c4be;
+  min-width: 60px;
+}
+.ov-estat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.ov-estat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.ov-estat--up {
+  color: #6fd48a;
+}
+.ov-estat--up .ov-estat-dot {
+  background: var(--ov-green);
+  box-shadow: 0 0 6px var(--ov-green);
+}
+.ov-estat--down {
+  color: var(--ov-muted);
+}
+.ov-estat--down .ov-estat-dot {
+  background: #6b7280;
+}
+.ov-noedge {
+  padding: 0.55rem 0.95rem;
+  border-top: 1px solid rgba(120, 140, 130, 0.12);
+  font-size: 0.76rem;
+  color: var(--ov-dim);
+  font-style: italic;
+}
+.ov-unassigned {
+  border: 1px dashed rgba(120, 140, 130, 0.35);
+  border-radius: 12px;
+  margin-top: 1.4rem;
+  overflow: hidden;
+}
+.ov-unassigned-head {
+  padding: 0.7rem 0.95rem;
+  font: 600 0.82rem "IBM Plex Sans";
+  color: var(--ov-amber);
+}
+
+/* ── area-data pages (Operator / Areas) ── */
+.ov-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.ov-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.6rem;
+}
+.ov-linkcard {
+  flex: 1 1 300px;
+  min-width: 280px;
+  border: 1px solid rgba(120, 140, 130, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1rem 1.1rem;
+  text-decoration: none;
+  color: var(--ov-text);
+  transition: border-color 0.15s;
+}
+.ov-linkcard:hover {
+  border-color: rgba(111, 174, 126, 0.5);
+}
+.ov-info-card {
+  flex: 1 1 320px;
+  border: 1px solid rgba(120, 140, 130, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.9rem 1.1rem;
+}
+.ov-metric-l {
+  font-size: 0.68rem;
+  color: var(--ov-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ov-metric-v {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.ov-metric-v span {
+  font-size: 0.72rem;
+  color: var(--ov-muted);
+  font-weight: 400;
+}
+.ov-tablewrap {
+  overflow-x: auto;
+  border: 1px solid rgba(120, 140, 130, 0.18);
+  border-radius: 12px;
+}
+.ov-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.ov-table th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  color: var(--ov-muted);
+  font: 600 0.72rem "IBM Plex Mono";
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(120, 140, 130, 0.18);
+  background: rgba(120, 140, 130, 0.06);
+}
+.ov-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(120, 140, 130, 0.08);
+}
+.ov-table tr:last-child td {
+  border-bottom: none;
+}
+.ov-accent {
+  color: var(--ov-green);
+  text-decoration: none;
+}
+.ov-best {
+  color: #6fd48a;
+  font-weight: 700;
+}

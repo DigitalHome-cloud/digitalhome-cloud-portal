@@ -17,27 +17,31 @@ DigitalHome.Cloud Portal — a Gatsby 5 / React 18 web app serving as the launch
 
 ## Local Dev Setup
 
-After `amplify pull` generates `src/aws-exports.js` (hardcoded values, gitignored), run:
+This app is a **frontend-only consumer**. The Amplify Gen 2 backend lives in the `repos/core` submodule (`digitalhome-cloud-darkfactory/repos/core/amplify/`). The connection details (Cognito + AppSync + S3 IDs) are committed to this repo as `src/amplify_outputs.json` and imported in `gatsby-browser.js` / `gatsby-ssr.js`.
+
+After a backend change, copy the regenerated outputs into this repo (in CI the build does this via `npx ampx generate outputs`):
 
 ```bash
-node scripts/generate-aws-config-from-master.js
+cp ~/digitalhomeCloud/digitalhome-cloud-darkfactory/repos/core/amplify_outputs.json src/
 ```
 
-This produces two files:
-- `src/aws-exports.deployment.js` — env-var-driven config, **safe to commit**
-- `.env.development` — actual values as `GATSBY_*` env vars, **gitignored, never commit**
+Then `yarn develop` (port 8000). For backend authoring see the umbrella's `dhc-amplify-gen2` skill.
 
-Gatsby automatically loads `.env.development` during `yarn develop` — no manual sourcing needed. In Amplify Hosting, the same `GATSBY_*` env vars are configured in the Amplify console, so `aws-exports.deployment.js` works in both environments.
+`.env.development` (gitignored) is reserved for cross-app URL overrides only (`GATSBY_DESIGNER_URL`, etc.) — backend connection no longer flows through env vars.
 
-**Files that must never be committed:** `src/aws-exports.js`, `.env.development` (both gitignored).
+**Files that must never be committed:** `.env.development`, `.amplify/`. (Note: `src/amplify_outputs.json` IS committed — it holds public IDs.)
 
 ## Architecture
 
-### Backend: AWS Amplify Gen1
+### Backend: AWS Amplify Gen 2
 
-The app uses an **Amplify Gen1 backend** (Cognito, AppSync/GraphQL, DynamoDB, Lambda, S3) but the frontend uses **Amplify JS v6** (Gen2-style imports like `aws-amplify/auth`). The backend is configured in `amplify/backend/`.
+The frontend talks to a Gen 2 backend (defined in TypeScript in the `repos/core` submodule) via Amplify JS v6 (`aws-amplify/auth`, `aws-amplify/api`, `aws-amplify/storage`). Backend resources: Cognito User Pool + Identity Pool, AppSync GraphQL API, DynamoDB tables (UserProfile, LibraryItem, SmartHome, SmartHomeDesign with PITR enabled), S3 storage, plus Lambda functions (`postConfirmation` Cognito trigger, `dhcDesignStorageProxy` for tenant signed-URL access).
 
-Amplify is initialized in `gatsby-browser.js`, which imports `src/aws-exports.deployment.js` — an environment-variable-driven config (all `GATSBY_*` env vars). The original `src/aws-exports.js` is the Amplify-generated version with hardcoded values; `aws-exports.deployment.js` is the deployment-safe wrapper.
+Amplify is initialized in `gatsby-browser.js` (and SSR mirror) via:
+```js
+import outputs from "./src/amplify_outputs.json";
+Amplify.configure(outputs);
+```
 
 ### Authentication Flow
 
@@ -45,11 +49,14 @@ Amplify is initialized in `gatsby-browser.js`, which imports `src/aws-exports.de
 - `authState`: `"loading"` | `"demo"` | `"authenticated"`
 - `user`, `groups`, `hasGroup(name)`, `signOut()`, `reloadSession()`
 
-Groups come from the Cognito ID token claim `cognito:groups`. Two key groups control feature access:
-- `dhc-users` — access to SmartHome Designer
-- `dhc-operators` — access to SmartHome Operator
+Groups come from the Cognito ID token claim `cognito:groups`. The platform groups (defined in `repos/core/amplify/auth/resource.ts`) are:
+- `dhc-admins` — full admin (Modeler editing, library writes)
+- `dhc-modelers` — Modeler editing access
+- `dhc-professional` — paid Designer tier
+- `dhc-standard` — standard Designer tier
+- `dhc-welcome` — auto-assigned to new sign-ups by the `postConfirmation` Lambda trigger
 
-The sign-in page (`src/pages/signin.js`) uses the `@aws-amplify/ui-react` `<Authenticator>` component with Google OAuth.
+The sign-in page (`src/pages/signin.js`) uses the `@aws-amplify/ui-react` `<Authenticator>` component (email-based; Google federation is not currently enabled).
 
 ### Routing & Pages
 
@@ -70,8 +77,15 @@ Three languages: `en` (default), `de`, `fr`. Translation files live in `src/loca
 
 ### GraphQL & UI Components
 
-- `src/graphql/` — Auto-generated queries, mutations, subscriptions (do not hand-edit)
-- `src/ui-components/` — Auto-generated Amplify Studio form components (do not hand-edit)
+- `src/graphql/` — Generated queries, mutations, subscriptions (regenerate with `npx ampx generate graphql-client-code` from `repos/core`; do not hand-edit)
+- `src/ui-components/` — Auto-generated Amplify form components (do not hand-edit)
+
+Schema lives in `repos/core/amplify/data/resource.ts`. Models:
+- `UserProfile` — `allow.owner()` + admin read-only
+- `SmartHome` — `allow.ownersDefinedIn("owners")` (multi-owner) + admin
+- `SmartHomeDesign` — `allow.ownersDefinedIn("owners")` (multi-owner) + admin, edit-locking via `lockedBy` / `lockedAt`
+- `LibraryItem` — admin writes, all-authenticated reads, capability flags (`hasActorCapability`, `hasSensorCapability`, `hasControllerCapability`)
+- Custom mutations: `requestDesignReadUrl`, `requestDesignWriteUrl` — Lambda-mediated signed-URL access to tenant S3 paths (DH-SPEC-203)
 
 ### Styling
 
@@ -87,9 +101,7 @@ The context exposes: `smartHomes`, `activeHome`, `setActiveHome(id)`, `isDemo`, 
 
 ### Authentication Resilience
 
-`AuthContext` calls `getCurrentUser()` before `fetchAuthSession()`. This ensures that if the Cognito Identity Pool is misconfigured (e.g. wrong region in `GATSBY_IDENTITY_POOL_ID`), authentication still works — the user stays authenticated and only group/token-payload data may be missing. The Identity Pool is only needed for direct AWS credential access (S3, etc.), not for User Pool auth.
-
-**Known issue**: If `GATSBY_IDENTITY_POOL_ID` in Amplify Console has a region prefix like `central-1` instead of `eu-central-1`, the Identity Pool endpoint will fail with `ERR_NAME_NOT_RESOLVED`. The code handles this gracefully, but fix the env var for full functionality.
+`AuthContext` calls `getCurrentUser()` before `fetchAuthSession()`. If the Identity Pool ever errors, authentication still works — the user stays authenticated and only group/token-payload data may be missing. The Identity Pool is only needed for direct AWS credential access (S3 client uploads, etc.), not for User Pool auth.
 
 ## Dependencies & Licenses
 
@@ -108,7 +120,7 @@ No copyleft (GPL/LGPL/AGPL) dependencies. Apache-2.0 requires preserving copyrig
 
 ## Multi-Repo Ecosystem
 
-The DigitalHome.Cloud platform spans multiple repos sharing one Amplify Gen1 backend:
+The DigitalHome.Cloud platform spans multiple repos sharing one Amplify Gen 2 backend (defined in the `repos/core` submodule):
 
 | App | Repo | Port | URL |
 |-----|------|------|-----|
@@ -116,15 +128,13 @@ The DigitalHome.Cloud platform spans multiple repos sharing one Amplify Gen1 bac
 | Designer | `digitalhome-cloud-designer` | 8001 | `designer.digitalhome.cloud` |
 | Modeler | `digitalhome-cloud-modeler` | 8002 | `modeler.digitalhome.cloud` |
 
-The semantic-core ontology files (TTL, JSON-LD context, SHACL shapes) live inside the modeler repo under `semantic-core/`.
+The semantic-core ontology files (TTL, JSON-LD context, SHACL shapes) live in the `core` repo under `schema/`.
 
-**The portal owns the Amplify backend** (`amplify/` folder). Other repos are frontend-only consumers — they use `amplify pull` + the same `generate-aws-config-from-master.js` script to get config, and share the same `GATSBY_*` env vars.
+**The `repos/core` submodule owns the `amplify/` directory** (the platform's Gen 2 backend). Each app commits its own `src/amplify_outputs.json` (the deploy-stack public IDs). All apps that point at the same stack consume one Cognito User Pool, AppSync API, and S3 bucket.
 
 Cross-app navigation uses env-var-driven URLs: `GATSBY_DESIGNER_URL` defaults to `https://designer.digitalhome.cloud` in production, overridden to `http://localhost:8001` in `.env.development`. The SmartHome ID is passed via `?home=` query parameter.
 
 All repos use `stage` branch for staging work before merging to `main`.
-
-**Files that must never be committed (all repos):** `src/aws-exports.js`, `.env.development`.
 
 ## Deployment
 
@@ -132,4 +142,4 @@ Amplify Hosting with branch-to-environment mapping:
 - `main` → production (`portal.digitalhome.cloud`)
 - `stage` → staging
 
-Build spec is in `amplify.yml`. The build runs `npm run build` and deploys `public/`.
+Build spec is in `amplify.yml`. The build runs `npm ci && npm run build` and deploys `public/`. Backend deploys (`npx ampx pipeline-deploy`) run from `repos/core`'s own backend-only Hosting build, not this app's; this app's `preBuild` pulls the deployed config via `npx ampx generate outputs`.

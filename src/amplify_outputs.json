@@ -1,0 +1,842 @@
+{
+  "auth": {
+    "user_pool_id": "eu-central-1_THCQaPWiv",
+    "aws_region": "eu-central-1",
+    "user_pool_client_id": "3e6bo1t2rdbg9osnnr8uisb6m1",
+    "identity_pool_id": "eu-central-1:e10977ce-1ef6-4d41-8acb-15efb7824093",
+    "mfa_methods": [],
+    "standard_required_attributes": [
+      "email"
+    ],
+    "username_attributes": [
+      "email"
+    ],
+    "user_verification_types": [
+      "email"
+    ],
+    "groups": [
+      {
+        "dhc-admins": {
+          "precedence": 0
+        }
+      },
+      {
+        "dhc-modelers": {
+          "precedence": 1
+        }
+      },
+      {
+        "dhc-devops-engineers": {
+          "precedence": 2
+        }
+      },
+      {
+        "dhc-professional": {
+          "precedence": 3
+        }
+      },
+      {
+        "dhc-standard": {
+          "precedence": 4
+        }
+      },
+      {
+        "dhc-welcome": {
+          "precedence": 5
+        }
+      }
+    ],
+    "mfa_configuration": "NONE",
+    "password_policy": {
+      "min_length": 8,
+      "require_lowercase": true,
+      "require_numbers": true,
+      "require_symbols": true,
+      "require_uppercase": true
+    },
+    "unauthenticated_identities_enabled": true
+  },
+  "data": {
+    "url": "https://jjscfn2izfhllgpo673kqvfd4e.appsync-api.eu-central-1.amazonaws.com/graphql",
+    "aws_region": "eu-central-1",
+    "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
+    "authorization_types": [
+      "AWS_IAM"
+    ],
+    "model_introspection": {
+      "version": 1,
+      "models": {
+        "UserProfile": {
+          "name": "UserProfile",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "displayName": {
+              "name": "displayName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "email": {
+              "name": "email",
+              "isArray": false,
+              "type": "AWSEmail",
+              "isRequired": false,
+              "attributes": []
+            },
+            "locale": {
+              "name": "locale",
+              "isArray": false,
+              "type": {
+                "enum": "Locale"
+              },
+              "isRequired": false,
+              "attributes": []
+            },
+            "marketingOptIn": {
+              "name": "marketingOptIn",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false,
+              "attributes": []
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "UserProfiles",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "provider": "userPools",
+                    "ownerField": "owner",
+                    "allow": "owner",
+                    "identityClaim": "cognito:username",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
+                  },
+                  {
+                    "groupClaim": "cognito:groups",
+                    "provider": "userPools",
+                    "allow": "groups",
+                    "operations": [
+                      "read"
+                    ],
+                    "groups": [
+                      "dhc-admins"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        },
+        "LibraryItem": {
+          "name": "LibraryItem",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "title": {
+              "name": "title",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "compatibleClasses": {
+              "name": "compatibleClasses",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": false
+            },
+            "region": {
+              "name": "region",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "standards": {
+              "name": "standards",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            },
+            "version": {
+              "name": "version",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "description": {
+              "name": "description",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "hasActorCapability": {
+              "name": "hasActorCapability",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false,
+              "attributes": []
+            },
+            "hasSensorCapability": {
+              "name": "hasSensorCapability",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false,
+              "attributes": []
+            },
+            "hasControllerCapability": {
+              "name": "hasControllerCapability",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false,
+              "attributes": []
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "LibraryItems",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "groupClaim": "cognito:groups",
+                    "provider": "userPools",
+                    "allow": "groups",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete"
+                    ],
+                    "groups": [
+                      "dhc-admins"
+                    ]
+                  },
+                  {
+                    "allow": "private",
+                    "operations": [
+                      "read"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        },
+        "DigitalHome": {
+          "name": "DigitalHome",
+          "fields": {
+            "smartHomeId": {
+              "name": "smartHomeId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "owners": {
+              "name": "owners",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            },
+            "country": {
+              "name": "country",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "postalCode": {
+              "name": "postalCode",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "streetCode": {
+              "name": "streetCode",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "houseNumber": {
+              "name": "houseNumber",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "suffix": {
+              "name": "suffix",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "city": {
+              "name": "city",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "addressLine1": {
+              "name": "addressLine1",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "addressLine2": {
+              "name": "addressLine2",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "isDemo": {
+              "name": "isDemo",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            },
+            "createdBy": {
+              "name": "createdBy",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "DigitalHomes",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "key",
+              "properties": {
+                "fields": [
+                  "smartHomeId"
+                ]
+              }
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "provider": "userPools",
+                    "ownerField": "owners",
+                    "allow": "owner",
+                    "identityClaim": "cognito:username",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
+                  },
+                  {
+                    "groupClaim": "cognito:groups",
+                    "provider": "userPools",
+                    "allow": "groups",
+                    "groups": [
+                      "dhc-admins"
+                    ],
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": true,
+            "primaryKeyFieldName": "smartHomeId",
+            "sortKeyFieldNames": []
+          }
+        },
+        "SmartHomeDesign": {
+          "name": "SmartHomeDesign",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "smartHomeId": {
+              "name": "smartHomeId",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "owners": {
+              "name": "owners",
+              "isArray": true,
+              "type": "String",
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true
+            },
+            "version": {
+              "name": "version",
+              "isArray": false,
+              "type": "Int",
+              "isRequired": true,
+              "attributes": []
+            },
+            "lastModified": {
+              "name": "lastModified",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": true,
+              "attributes": []
+            },
+            "lockedBy": {
+              "name": "lockedBy",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "lockedAt": {
+              "name": "lockedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": []
+            },
+            "ontologyVersion": {
+              "name": "ontologyVersion",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "SmartHomeDesigns",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "key",
+              "properties": {
+                "name": "smartHomeDesignsBySmartHomeId",
+                "queryField": "listSmartHomeDesignBySmartHomeId",
+                "fields": [
+                  "smartHomeId"
+                ]
+              }
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "provider": "userPools",
+                    "ownerField": "owners",
+                    "allow": "owner",
+                    "identityClaim": "cognito:username",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
+                  },
+                  {
+                    "groupClaim": "cognito:groups",
+                    "provider": "userPools",
+                    "allow": "groups",
+                    "groups": [
+                      "dhc-admins"
+                    ],
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        }
+      },
+      "enums": {
+        "Locale": {
+          "name": "Locale",
+          "values": [
+            "EN",
+            "FR",
+            "DE"
+          ]
+        }
+      },
+      "nonModels": {
+        "DesignStorageUrl": {
+          "name": "DesignStorageUrl",
+          "fields": {
+            "url": {
+              "name": "url",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "expiresAt": {
+              "name": "expiresAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": true,
+              "attributes": []
+            },
+            "contentType": {
+              "name": "contentType",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        },
+        "InitiateDigitalHomePayload": {
+          "name": "InitiateDigitalHomePayload",
+          "fields": {
+            "smartHomeId": {
+              "name": "smartHomeId",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        }
+      },
+      "mutations": {
+        "initiateDigitalHome": {
+          "name": "initiateDigitalHome",
+          "isArray": false,
+          "type": {
+            "nonModel": "InitiateDigitalHomePayload"
+          },
+          "isRequired": false,
+          "arguments": {
+            "country": {
+              "name": "country",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "postalCode": {
+              "name": "postalCode",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "streetCode": {
+              "name": "streetCode",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "houseNumber": {
+              "name": "houseNumber",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "suffix": {
+              "name": "suffix",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "city": {
+              "name": "city",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "addressLine1": {
+              "name": "addressLine1",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "addressLine2": {
+              "name": "addressLine2",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            },
+            "isDemo": {
+              "name": "isDemo",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true
+            }
+          }
+        },
+        "requestDesignReadUrl": {
+          "name": "requestDesignReadUrl",
+          "isArray": false,
+          "type": {
+            "nonModel": "DesignStorageUrl"
+          },
+          "isRequired": false,
+          "arguments": {
+            "smartHomeId": {
+              "name": "smartHomeId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "fileName": {
+              "name": "fileName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            }
+          }
+        },
+        "requestDesignWriteUrl": {
+          "name": "requestDesignWriteUrl",
+          "isArray": false,
+          "type": {
+            "nonModel": "DesignStorageUrl"
+          },
+          "isRequired": false,
+          "arguments": {
+            "smartHomeId": {
+              "name": "smartHomeId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "fileName": {
+              "name": "fileName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "contentType": {
+              "name": "contentType",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false
+            }
+          }
+        },
+        "requestDigitalHomeReadUrl": {
+          "name": "requestDigitalHomeReadUrl",
+          "isArray": false,
+          "type": {
+            "nonModel": "DesignStorageUrl"
+          },
+          "isRequired": false,
+          "arguments": {
+            "smartHomeId": {
+              "name": "smartHomeId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "fileName": {
+              "name": "fileName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "storage": {
+    "aws_region": "eu-central-1",
+    "bucket_name": "amplify-d1abchwrql1qxd-st-dhcstoragebucket676c6b9f-i7xgtqgf0yec",
+    "buckets": [
+      {
+        "name": "dhcStorage",
+        "bucket_name": "amplify-d1abchwrql1qxd-st-dhcstoragebucket676c6b9f-i7xgtqgf0yec",
+        "aws_region": "eu-central-1",
+        "paths": {
+          "public/*": {
+            "guest": [
+              "get",
+              "list"
+            ],
+            "authenticated": [
+              "get",
+              "list",
+              "write",
+              "delete"
+            ]
+          },
+          "protected/*": {
+            "authenticated": [
+              "get",
+              "list"
+            ]
+          },
+          "protected/${cognito-identity.amazonaws.com:sub}/*": {
+            "entityidentity": [
+              "get",
+              "list",
+              "write",
+              "delete"
+            ]
+          },
+          "private/${cognito-identity.amazonaws.com:sub}/*": {
+            "entityidentity": [
+              "get",
+              "list",
+              "write",
+              "delete"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "version": "1.4"
+}
