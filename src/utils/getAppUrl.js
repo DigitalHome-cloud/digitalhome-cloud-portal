@@ -1,3 +1,5 @@
+import { useState, useEffect } from "react";
+
 /**
  * getAppUrl.js — Environment namespace routing
  *
@@ -37,9 +39,7 @@ function detectNamespace() {
  * @param {string} appName — "portal", "designer", or "modeler"
  * @returns {string} — base URL (no trailing slash)
  */
-export function getAppUrl(appName) {
-  const ns = detectNamespace();
-
+function buildUrl(appName, ns) {
   switch (ns) {
     case "dev":
       return `http://localhost:${APP_PORTS[appName]}`;
@@ -48,4 +48,33 @@ export function getAppUrl(appName) {
     default:
       return `https://${APP_HOSTS[appName]}`;
   }
+}
+
+export function getAppUrl(appName) {
+  return buildUrl(appName, detectNamespace());
+}
+
+/**
+ * React hook form of getAppUrl — use this for anything that ends up in an
+ * href/src attribute. Calling getAppUrl() directly during render is a bug.
+ *
+ * getAppUrl() reads window.location, which does not exist during Gatsby's
+ * build-time render: detectNamespace() falls back to "prod", so the PRODUCTION
+ * url is what gets baked into the static HTML. React 18 does not patch
+ * mismatched *attributes* during hydration — it keeps the server's value — so
+ * a stage or dev build would otherwise point at production forever.
+ *
+ * The initial state must therefore reproduce the server's value ("prod") even
+ * though window exists on the client. If it resolved the real namespace up
+ * front, state would already equal the correct url, the effect's setUrl() would
+ * be a no-op, React would bail out of the re-render, and the stale prod href
+ * baked into the HTML would never be corrected. Resolving only in the effect
+ * guarantees a genuine state change → re-render → patched href.
+ */
+export function useAppUrl(appName) {
+  const [url, setUrl] = useState(() => buildUrl(appName, "prod"));
+  useEffect(() => {
+    setUrl(getAppUrl(appName));
+  }, [appName]);
+  return url;
 }

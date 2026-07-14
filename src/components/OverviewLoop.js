@@ -3,7 +3,7 @@ import { Link } from "gatsby";
 import { useTranslation } from "gatsby-plugin-react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useSmartHome } from "../context/SmartHomeContext";
-import { getAppUrl } from "../utils/getAppUrl";
+import { useAppUrl } from "../utils/getAppUrl";
 
 // The "continuous loop" hero: Observe → Design → Build → Run around a central
 // habitat node. CTAs link to real destinations (those pages gate auth on their
@@ -90,9 +90,8 @@ const OverviewLoop = () => {
   const { activeHome } = useSmartHome();
   const homeId = activeHome?.id;
   const homeSet = isAuthenticated && homeId;
-  const designerUrl = `${getAppUrl("designer")}?home=${encodeURIComponent(
-    homeId || ""
-  )}`;
+  const designerBase = useAppUrl("designer");
+  const designerUrl = `${designerBase}?home=${encodeURIComponent(homeId || "")}`;
 
   return (
     <div className="ov-body">
