@@ -4,7 +4,7 @@ import { useI18next } from "gatsby-plugin-react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useSmartHome } from "../context/SmartHomeContext";
 import { useTier } from "../utils/useTier";
-import { getAppUrl } from "../utils/getAppUrl";
+import { useAppUrl } from "../utils/getAppUrl";
 
 // Left-rail shell for the Overview landing. Self-contained (does NOT use the
 // shared Layout/Header). Auth-aware: guest vs signed-in changes the Account
@@ -48,6 +48,14 @@ const IC = {
     </>
   ),
   fleet: S(<path d="M12 4 5 7v5c0 4 3 7 7 8 4-1 7-4 7-8V7z" />),
+  inventory: S(
+    <>
+      <rect x="3" y="8" width="18" height="12" rx="2" />
+      <path d="M3 12h18" />
+      <path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" />
+      <path d="M10 16h4" />
+    </>
+  ),
   userPlus: S(
     <>
       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -157,9 +165,9 @@ const OverviewShell = ({
     user?.username ||
     "You";
   const homeId = activeHome?.id;
-  const designerUrl = `${getAppUrl("designer")}?home=${encodeURIComponent(
-    homeId || ""
-  )}`;
+  const designerBase = useAppUrl("designer");
+  const modelerUrl = useAppUrl("modeler");
+  const designerUrl = `${designerBase}?home=${encodeURIComponent(homeId || "")}`;
 
   const cycleLang = () => {
     const list = languages && languages.length ? languages : ["en"];
@@ -189,7 +197,7 @@ const OverviewShell = ({
           <NavLink
             icon={IC.catalog}
             label="Catalog"
-            to={getAppUrl("modeler")}
+            to={modelerUrl}
             external
           />
           <NavLink
@@ -218,6 +226,13 @@ const OverviewShell = ({
             label="Fleet"
             to="/fleet"
             active={active === "fleet"}
+            locked={!isAuthenticated}
+          />
+          <NavLink
+            icon={IC.inventory}
+            label="Inventory"
+            to="/inventory"
+            active={active === "inventory"}
             locked={!isAuthenticated}
           />
 

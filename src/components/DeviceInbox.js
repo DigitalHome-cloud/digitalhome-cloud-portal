@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "gatsby-plugin-react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useSmartHome } from "../context/SmartHomeContext";
 import { generateClient } from "aws-amplify/api";
@@ -27,24 +28,14 @@ import DeviceInstanceForm from "./DeviceInstanceForm";
 const ownerIdOf = (user) =>
   user?.idTokenPayload?.sub || user?.userId || user?.username || null;
 
-const StatusPill = ({ s }) => {
-  const map = {
-    pending: ["#64748b", "pending"],
-    done: ["#16a34a", "done"],
-    skipped: ["#b45309", "skipped"],
-  };
-  const [bg, label] = map[s] || map.pending;
-  return (
-    <span
-      className="dhc-nav-pill"
-      style={{ background: bg, color: "#fff", borderColor: bg }}
-    >
-      {label}
-    </span>
-  );
+const STATUS_FALLBACK = {
+  pending: "pending",
+  done: "done",
+  skipped: "skipped",
 };
 
 const DeviceInbox = () => {
+  const { t } = useTranslation();
   const { isAuthenticated, user, hasGroup } = useAuth();
   const { activeHome } = useSmartHome();
   const homeId = activeHome?.id || "";
@@ -59,6 +50,15 @@ const DeviceInbox = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [note, setNote] = useState(null);
+
+  const StatusPill = ({ s }) => {
+    const key = STATUS_FALLBACK[s] ? s : "pending";
+    return (
+      <span className={`ov-pill ov-pill--${key}`}>
+        {t(`inventory.status.${key}`, { defaultValue: STATUS_FALLBACK[key] })}
+      </span>
+    );
+  };
 
   const refresh = useCallback(async () => {
     if (!isAuthenticated || !homeId || typeof window === "undefined") return;
@@ -79,11 +79,15 @@ const DeviceInbox = () => {
       if (existing) setInbox(existing);
     } catch (err) {
       console.error("[DeviceInbox] load failed:", err);
-      setError("Failed to load the inbox / catalogue.");
+      setError(
+        t("inventory.error.inboxLoad", {
+          defaultValue: "Failed to load the inbox / catalogue.",
+        })
+      );
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, homeId]);
+  }, [isAuthenticated, homeId, t]);
 
   useEffect(() => {
     refresh();
@@ -110,13 +114,14 @@ const DeviceInbox = () => {
     try {
       const Papa = (await import("papaparse")).default;
       const text = await file.text();
-      const parsed = Papa.parse(text, {
-        header: true,
-        skipEmptyLines: true,
-      });
+      const parsed = Papa.parse(text, { header: true, skipEmptyLines: true });
       if (parsed.errors?.length) {
         setError(
-          `CSV parse error (row ${parsed.errors[0].row}): ${parsed.errors[0].message}`
+          t("inventory.inbox.parseError", {
+            row: parsed.errors[0].row,
+            message: parsed.errors[0].message,
+            defaultValue: `CSV parse error (row ${parsed.errors[0].row}): ${parsed.errors[0].message}`,
+          })
         );
         return;
       }
@@ -128,9 +133,17 @@ const DeviceInbox = () => {
       setInbox(next);
       setStage("models");
       setNote(
-        `Imported ${next.models.length} model(s), ${next.devices.length} device(s)` +
+        t("inventory.inbox.imported", {
+          models: next.models.length,
+          devices: next.devices.length,
+          defaultValue: `Imported ${next.models.length} model(s), ${next.devices.length} device(s)`,
+        }) +
           (next.skipped?.length
-            ? ` — ${next.skipped.length} row(s) skipped (no modelNumber/serialNumber)`
+            ? " — " +
+              t("inventory.inbox.skippedRows", {
+                count: next.skipped.length,
+                defaultValue: `${next.skipped.length} row(s) skipped (no modelNumber/serialNumber)`,
+              })
             : "")
       );
     } catch (err) {
@@ -143,7 +156,12 @@ const DeviceInbox = () => {
     try {
       await writeInbox(homeId, nextInbox);
     } catch (err) {
-      setError(`Saved locally but inbox.json write failed: ${err.message}`);
+      setError(
+        t("inventory.inbox.persistFailed", {
+          message: err.message,
+          defaultValue: `Saved locally but inbox.json write failed: ${err.message}`,
+        })
+      );
     }
   };
 
@@ -174,9 +192,7 @@ const DeviceInbox = () => {
 
   const saveDevice = async (args) => {
     const client = generateClient();
-    const existing = devices.find(
-      (d) => d.serialNumber === args.serialNumber
-    );
+    const existing = devices.find((d) => d.serialNumber === args.serialNumber);
     if (existing) {
       const { id, ...rest } = args;
       await client.graphql({
@@ -207,18 +223,11 @@ const DeviceInbox = () => {
 
   if (!homeId) {
     return (
-      <div className="dhc-manager-list">
-        <p
-          style={{
-            textAlign: "center",
-            padding: "1.5rem",
-            color: "#9ca3af",
-            fontSize: "0.9rem",
-          }}
-        >
-          Select a SmartHome (Manager) to use the device import inbox.
-        </p>
-      </div>
+      <p className="ov-empty">
+        {t("inventory.inbox.noHome", {
+          defaultValue: "Select a SmartHome to use the device import inbox.",
+        })}
+      </p>
     );
   }
 
@@ -233,292 +242,303 @@ const DeviceInbox = () => {
   const pendingModelCount = modelRows.filter(isPending).length;
   const pendingDeviceCount = deviceRows.filter(isPending).length;
 
+  const emptyRowsMessage = (total) =>
+    total === 0
+      ? t("inventory.inbox.noRows", {
+          defaultValue: "No rows in this import.",
+        })
+      : filter === "pending"
+        ? t("inventory.inbox.nothingPending", {
+            defaultValue:
+              "Nothing pending — switch to All to see resolved rows.",
+          })
+        : t("inventory.inbox.noMatch", {
+            defaultValue: "No rows match this filter.",
+          });
+
+  const existsPill = (exists) => (
+    <span className={exists ? "ov-pill" : "ov-pill ov-pill--new"}>
+      {exists
+        ? t("inventory.inbox.exists", { defaultValue: "exists → modify" })
+        : t("inventory.inbox.new", { defaultValue: "new → create" })}
+    </span>
+  );
+
   return (
-    <div className="dhc-manager-list">
+    <div>
       {/* Upload bar */}
-      <div
-        style={{
-          display: "flex",
-          gap: "0.5rem",
-          alignItems: "center",
-          flexWrap: "wrap",
-          marginBottom: "1rem",
-        }}
-      >
-        <span className="dhc-nav-pill" title="Active SmartHome">
+      <div className="ov-bar">
+        <span
+          className="ov-pill"
+          title={t("inventory.activeHome", { defaultValue: "Active SmartHome" })}
+        >
           {homeId}
         </span>
         <button
           type="button"
-          className="dhc-button-ghost"
+          className="ov-btn ov-btn--ghost"
           onClick={downloadTemplate}
         >
-          Download CSV template
+          {t("inventory.inbox.downloadTemplate", {
+            defaultValue: "Download CSV template",
+          })}
         </button>
-        <label
-          className="dhc-button-primary"
-          style={{ cursor: "pointer", display: "inline-block" }}
-        >
-          Upload CSV
+        <label className="ov-btn ov-btn--primary">
+          {t("inventory.inbox.upload", { defaultValue: "Upload CSV" })}
           <input
             type="file"
             accept=".csv,text/csv"
             onChange={handleUpload}
-            style={{ display: "none" }}
+            hidden
             disabled={!isAuthenticated}
           />
         </label>
-        <div style={{ flex: 1 }} />
-        {inbox && (
-          <>
+      </div>
+
+      {note && <p className="ov-msg">{note}</p>}
+      {error && <p className="ov-err">{error}</p>}
+
+      {/* Stage + filter bar — only meaningful once an inbox exists */}
+      {inbox && (
+        <div className="ov-bar">
+          <div className="ov-tabs" role="tablist">
             <button
               type="button"
-              className={
-                stage === "models"
-                  ? "dhc-button-primary"
-                  : "dhc-button-ghost"
-              }
+              role="tab"
+              aria-selected={stage === "models"}
+              className={stage === "models" ? "ov-tab ov-tab--active" : "ov-tab"}
               onClick={() => setStage("models")}
             >
-              1 · Models ({pendingModelCount}/{modelRows.length})
+              {t("inventory.inbox.stageModels", { defaultValue: "1 · Models" })}{" "}
+              ({pendingModelCount}/{modelRows.length})
             </button>
             <button
               type="button"
+              role="tab"
+              aria-selected={stage === "devices"}
               className={
-                stage === "devices"
-                  ? "dhc-button-primary"
-                  : "dhc-button-ghost"
+                stage === "devices" ? "ov-tab ov-tab--active" : "ov-tab"
               }
               onClick={() => setStage("devices")}
               disabled={modelsPending}
               title={
                 modelsPending
-                  ? "Resolve all model rows first"
+                  ? t("inventory.inbox.resolveModelsFirst", {
+                      defaultValue: "Resolve all model rows first",
+                    })
                   : undefined
               }
             >
-              2 · Devices ({pendingDeviceCount}/{deviceRows.length})
+              {t("inventory.inbox.stageDevices", {
+                defaultValue: "2 · Devices",
+              })}{" "}
+              ({pendingDeviceCount}/{deviceRows.length})
             </button>
-            <span
-              role="group"
-              aria-label="Show pending or all rows"
-              style={{
-                marginLeft: "0.4rem",
-                display: "inline-flex",
-                gap: "0.25rem",
-              }}
-            >
-              <button
-                type="button"
-                className={
-                  filter === "pending"
-                    ? "dhc-button-primary"
-                    : "dhc-button-ghost"
-                }
-                onClick={() => setFilter("pending")}
-                title="Hide rows already marked done or skipped"
-              >
-                Pending
-              </button>
-              <button
-                type="button"
-                className={
-                  filter === "all" ? "dhc-button-primary" : "dhc-button-ghost"
-                }
-                onClick={() => setFilter("all")}
-                title="Show every row in the import"
-              >
-                All
-              </button>
-            </span>
-          </>
-        )}
-      </div>
+          </div>
+          <div className="ov-bar-spacer" />
+          <button
+            type="button"
+            className={
+              filter === "pending"
+                ? "ov-btn ov-btn--primary"
+                : "ov-btn ov-btn--ghost"
+            }
+            onClick={() => setFilter("pending")}
+          >
+            {t("inventory.inbox.filterPending", { defaultValue: "Pending" })}
+          </button>
+          <button
+            type="button"
+            className={
+              filter === "all"
+                ? "ov-btn ov-btn--primary"
+                : "ov-btn ov-btn--ghost"
+            }
+            onClick={() => setFilter("all")}
+          >
+            {t("inventory.inbox.filterAll", { defaultValue: "All" })}
+          </button>
+        </div>
+      )}
 
-      {note && (
-        <p style={{ color: "#4ade80", fontSize: "0.85rem" }}>{note}</p>
-      )}
-      {error && (
-        <p style={{ color: "#fca5a5", fontSize: "0.85rem" }}>{error}</p>
-      )}
       {loading && (
-        <p style={{ fontSize: "0.85rem", color: "#9ca3af" }}>Loading…</p>
+        <p className="ov-empty">
+          {t("inventory.loading", { defaultValue: "Loading…" })}
+        </p>
       )}
 
       {!inbox && !loading && (
-        <p style={{ fontSize: "0.85rem", color: "#9ca3af" }}>
-          No inbox yet. Download the template, fill it in, and upload the CSV.
+        <p className="ov-empty">
+          {t("inventory.inbox.empty", {
+            defaultValue:
+              "No inbox yet. Download the template, fill it in, and upload the CSV.",
+          })}
         </p>
       )}
 
       {editing && editing.kind === "model" && (
-        <div style={{ marginBottom: "1.5rem" }}>
-          <DeviceModelForm
-            item={editing.row}
-            onSave={saveModel}
-            onCancel={() => setEditing(null)}
-          />
-        </div>
+        <DeviceModelForm
+          item={editing.row}
+          onSave={saveModel}
+          onCancel={() => setEditing(null)}
+        />
       )}
       {editing && editing.kind === "device" && (
-        <div style={{ marginBottom: "1.5rem" }}>
-          <DeviceInstanceForm
-            item={editing.row}
-            models={models}
-            onSave={saveDevice}
-            onCancel={() => setEditing(null)}
-          />
-        </div>
+        <DeviceInstanceForm
+          item={editing.row}
+          models={models}
+          onSave={saveDevice}
+          onCancel={() => setEditing(null)}
+        />
       )}
 
       {inbox && !editing && stage === "models" && (
-        <table className="dhc-manager-table">
-          <thead>
-            <tr>
-              <th>Model #</th>
-              <th>Brand</th>
-              <th>Type</th>
-              <th>In catalogue</th>
-              <th>Row</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibleModelRows.length === 0 ? (
+        <div className="ov-tablewrap">
+          <table className="ov-table">
+            <thead>
               <tr>
-                <td colSpan={6} style={{ textAlign: "center", padding: "1.5rem", color: "#9ca3af" }}>
-                  {modelRows.length === 0
-                    ? "No model rows in this import."
-                    : filter === "pending"
-                      ? "Nothing pending — switch to All to see resolved rows."
-                      : "No model rows match this filter."}
-                </td>
+                <th>
+                  {t("inventory.col.modelNumber", { defaultValue: "Model #" })}
+                </th>
+                <th>{t("inventory.model.brand", { defaultValue: "Brand" })}</th>
+                <th>{t("inventory.col.type", { defaultValue: "Type" })}</th>
+                <th>
+                  {t("inventory.col.inCatalogue", {
+                    defaultValue: "In catalogue",
+                  })}
+                </th>
+                <th>{t("inventory.col.row", { defaultValue: "Row" })}</th>
+                <th className="ov-th-right">
+                  {t("inventory.col.actions", { defaultValue: "Actions" })}
+                </th>
               </tr>
-            ) : (
-              visibleModelRows.map((r) => {
-                const exists = models.some(
-                  (m) => m.modelNumber === r.modelNumber
-                );
-                return (
+            </thead>
+            <tbody>
+              {visibleModelRows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="ov-empty">
+                    {emptyRowsMessage(modelRows.length)}
+                  </td>
+                </tr>
+              ) : (
+                visibleModelRows.map((r) => (
                   <tr key={r.modelNumber}>
-                    <td style={{ fontFamily: "monospace" }}>
-                      {r.modelNumber}
-                    </td>
+                    <td className="ov-mono">{r.modelNumber}</td>
                     <td>{r.brand}</td>
                     <td>{r.deviceType}</td>
                     <td>
-                      <span className="dhc-nav-pill">
-                        {exists ? "exists → modify" : "new → create"}
-                      </span>
+                      {existsPill(
+                        models.some((m) => m.modelNumber === r.modelNumber)
+                      )}
                     </td>
                     <td>
                       <StatusPill s={r._status} />
                     </td>
                     <td>
-                      <button
-                        type="button"
-                        className="dhc-button-ghost"
-                        disabled={!isAdmin}
-                        title={
-                          !isAdmin
-                            ? "Catalogue writes require dhc-admins"
-                            : undefined
-                        }
-                        onClick={() =>
-                          setEditing({ kind: "model", row: r })
-                        }
-                        style={{ marginRight: "0.4rem" }}
-                      >
-                        Process
-                      </button>
-                      <button
-                        type="button"
-                        className="dhc-button-ghost"
-                        onClick={() =>
-                          markRow("model", r.modelNumber, "skipped")
-                        }
-                      >
-                        Skip
-                      </button>
+                      <div className="ov-cell-actions">
+                        <button
+                          type="button"
+                          className="ov-btn ov-btn--ghost"
+                          disabled={!isAdmin}
+                          title={
+                            !isAdmin
+                              ? t("inventory.inbox.adminRequired", {
+                                  defaultValue:
+                                    "Catalogue writes require dhc-admins",
+                                })
+                              : undefined
+                          }
+                          onClick={() => setEditing({ kind: "model", row: r })}
+                        >
+                          {t("inventory.action.process", {
+                            defaultValue: "Process",
+                          })}
+                        </button>
+                        <button
+                          type="button"
+                          className="ov-btn ov-btn--ghost"
+                          onClick={() =>
+                            markRow("model", r.modelNumber, "skipped")
+                          }
+                        >
+                          {t("inventory.action.skip", { defaultValue: "Skip" })}
+                        </button>
+                      </div>
                     </td>
                   </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {inbox && !editing && stage === "devices" && (
-        <table className="dhc-manager-table">
-          <thead>
-            <tr>
-              <th>Serial</th>
-              <th>Model #</th>
-              <th>Type</th>
-              <th>State</th>
-              <th>Row</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibleDeviceRows.length === 0 ? (
+        <div className="ov-tablewrap">
+          <table className="ov-table">
+            <thead>
               <tr>
-                <td colSpan={6} style={{ textAlign: "center", padding: "1.5rem", color: "#9ca3af" }}>
-                  {deviceRows.length === 0
-                    ? "No device rows in this import."
-                    : filter === "pending"
-                      ? "Nothing pending — switch to All to see resolved rows."
-                      : "No device rows match this filter."}
-                </td>
+                <th>{t("inventory.col.serial", { defaultValue: "Serial" })}</th>
+                <th>
+                  {t("inventory.col.modelNumber", { defaultValue: "Model #" })}
+                </th>
+                <th>{t("inventory.col.type", { defaultValue: "Type" })}</th>
+                <th>{t("inventory.col.state", { defaultValue: "State" })}</th>
+                <th>{t("inventory.col.row", { defaultValue: "Row" })}</th>
+                <th className="ov-th-right">
+                  {t("inventory.col.actions", { defaultValue: "Actions" })}
+                </th>
               </tr>
-            ) : (
-              visibleDeviceRows.map((r) => {
-                const exists = devices.some(
-                  (d) => d.serialNumber === r.serialNumber
-                );
-                return (
+            </thead>
+            <tbody>
+              {visibleDeviceRows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="ov-empty">
+                    {emptyRowsMessage(deviceRows.length)}
+                  </td>
+                </tr>
+              ) : (
+                visibleDeviceRows.map((r) => (
                   <tr key={r.serialNumber}>
-                    <td style={{ fontFamily: "monospace" }}>
-                      {r.serialNumber}
-                    </td>
-                    <td>{r.modelNumber}</td>
+                    <td className="ov-mono">{r.serialNumber}</td>
+                    <td className="ov-mono">{r.modelNumber}</td>
                     <td>{r.deviceType}</td>
                     <td>
-                      <span className="dhc-nav-pill">
-                        {exists ? "exists → modify" : "new → create"}
-                      </span>
+                      {existsPill(
+                        devices.some((d) => d.serialNumber === r.serialNumber)
+                      )}
                     </td>
                     <td>
                       <StatusPill s={r._status} />
                     </td>
                     <td>
-                      <button
-                        type="button"
-                        className="dhc-button-ghost"
-                        onClick={() =>
-                          setEditing({ kind: "device", row: r })
-                        }
-                        style={{ marginRight: "0.4rem" }}
-                      >
-                        Process
-                      </button>
-                      <button
-                        type="button"
-                        className="dhc-button-ghost"
-                        onClick={() =>
-                          markRow("device", r.serialNumber, "skipped")
-                        }
-                      >
-                        Skip
-                      </button>
+                      <div className="ov-cell-actions">
+                        <button
+                          type="button"
+                          className="ov-btn ov-btn--ghost"
+                          onClick={() => setEditing({ kind: "device", row: r })}
+                        >
+                          {t("inventory.action.process", {
+                            defaultValue: "Process",
+                          })}
+                        </button>
+                        <button
+                          type="button"
+                          className="ov-btn ov-btn--ghost"
+                          onClick={() =>
+                            markRow("device", r.serialNumber, "skipped")
+                          }
+                        >
+                          {t("inventory.action.skip", { defaultValue: "Skip" })}
+                        </button>
+                      </div>
                     </td>
                   </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

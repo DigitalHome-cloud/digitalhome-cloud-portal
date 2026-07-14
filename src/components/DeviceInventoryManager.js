@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "gatsby-plugin-react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useSmartHome } from "../context/SmartHomeContext";
 import DeviceInstanceForm from "./DeviceInstanceForm";
@@ -13,31 +14,28 @@ import {
   deleteDeviceInstance,
 } from "../graphql/mutations";
 
-// DeviceLifecycle enum → display label.
-const LIFECYCLE_LABEL = {
-  NEW: "New",
-  ACTIVE: "Active",
-  END_OF_LIFE: "End of life",
-  DECOMMISSIONED: "Decommissioned",
+// DeviceLifecycle enum → fallback label + pill tone.
+const LIFECYCLE = {
+  NEW: ["New", "new"],
+  ACTIVE: ["Active", "done"],
+  END_OF_LIFE: ["End of life", "skipped"],
+  DECOMMISSIONED: ["Decommissioned", "pending"],
 };
 
 /**
- * Per-SmartHome device inventory. Mirrors SmartHomeManager: list + form
- * toggle + GraphQL CRUD. Scoped to the active home via the smartHomeId
- * secondary index. Writes require the caller to be a home owner (the new
- * row is created with owners=[caller]) or dhc-admins.
+ * Per-SmartHome device inventory. List + form toggle + GraphQL CRUD, scoped to
+ * the active home via the smartHomeId secondary index. Writes require the
+ * caller to be a home owner (the new row is created with owners=[caller]) or
+ * dhc-admins.
  */
 const ownerIdOf = (user) =>
-  user?.idTokenPayload?.sub ||
-  user?.userId ||
-  user?.username ||
-  null;
+  user?.idTokenPayload?.sub || user?.userId || user?.username || null;
 
 const DeviceInventoryManager = () => {
-  const { isAuthenticated, user, hasGroup } = useAuth();
+  const { t } = useTranslation();
+  const { isAuthenticated, user } = useAuth();
   const { activeHome } = useSmartHome();
   const homeId = activeHome?.id || "";
-  const isAdmin = hasGroup("dhc-admins");
 
   const [items, setItems] = useState([]);
   const [models, setModels] = useState([]);
@@ -48,21 +46,11 @@ const DeviceInventoryManager = () => {
   const [formMode, setFormMode] = useState("edit"); // 'view' | 'edit'
 
   const thumbOf = (mn) => {
-    const t = (models.find((m) => m.modelNumber === mn) || {}).thumbnail;
-    return t ? (
-      <img
-        src={t}
-        alt=""
-        style={{
-          width: 32,
-          height: 32,
-          objectFit: "cover",
-          borderRadius: "0.3rem",
-          border: "1px solid rgba(148,163,184,0.3)",
-        }}
-      />
+    const src = (models.find((m) => m.modelNumber === mn) || {}).thumbnail;
+    return src ? (
+      <img className="ov-thumb" src={src} alt="" />
     ) : (
-      <span style={{ color: "#64748b", fontSize: "0.75rem" }}>—</span>
+      <span className="ov-thumb--none">—</span>
     );
   };
 
@@ -83,11 +71,15 @@ const DeviceInventoryManager = () => {
       setModels(modelRes.data.listDeviceModels.items || []);
     } catch (err) {
       console.error("[DeviceInventory] fetch failed:", err);
-      setError("Failed to load devices for this SmartHome.");
+      setError(
+        t("inventory.error.devicesLoad", {
+          defaultValue: "Failed to load devices for this SmartHome.",
+        })
+      );
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, homeId]);
+  }, [isAuthenticated, homeId, t]);
 
   useEffect(() => {
     fetchInstances();
@@ -121,7 +113,15 @@ const DeviceInventoryManager = () => {
   };
 
   const handleDelete = async (it) => {
-    if (!window.confirm(`Remove device ${it.serialNumber} from ${homeId}?`)) {
+    if (
+      !window.confirm(
+        t("inventory.devices.deleteConfirm", {
+          serial: it.serialNumber,
+          home: homeId,
+          defaultValue: `Remove device ${it.serialNumber} from ${homeId}?`,
+        })
+      )
+    ) {
       return;
     }
     try {
@@ -138,157 +138,145 @@ const DeviceInventoryManager = () => {
 
   if (!homeId) {
     return (
-      <div className="dhc-manager-list">
-        <p
-          style={{
-            textAlign: "center",
-            padding: "1.5rem",
-            color: "#9ca3af",
-            fontSize: "0.9rem",
-          }}
-        >
-          Select a SmartHome (Manager) to view and manage its device inventory.
-        </p>
-      </div>
+      <p className="ov-empty">
+        {t("inventory.devices.noHome", {
+          defaultValue:
+            "Select a SmartHome to view and manage its device inventory.",
+        })}
+      </p>
     );
   }
 
+  const openForm = (item, mode) => {
+    setEditingItem(item);
+    setFormMode(mode);
+    setShowForm(true);
+  };
+
   return (
-    <div className="dhc-manager-list">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "0.75rem",
-          marginBottom: "1rem",
-        }}
-      >
-        <span className="dhc-nav-pill" title="Active SmartHome">
+    <div>
+      <div className="ov-bar">
+        <span
+          className="ov-pill"
+          title={t("inventory.activeHome", { defaultValue: "Active SmartHome" })}
+        >
           {homeId}
         </span>
+        <div className="ov-bar-spacer" />
         {!showForm && (
           <button
             type="button"
-            className="dhc-button-primary"
-            onClick={() => {
-              setEditingItem(null);
-              setFormMode("edit");
-              setShowForm(true);
-            }}
+            className="ov-btn ov-btn--primary"
+            onClick={() => openForm(null, "edit")}
             disabled={!isAuthenticated}
-            title={
-              !isAuthenticated ? "Sign in to add devices" : undefined
-            }
           >
-            + Add device
+            {t("inventory.devices.add", { defaultValue: "+ Add device" })}
           </button>
         )}
       </div>
 
-      {error && (
-        <p style={{ color: "#fca5a5", fontSize: "0.85rem" }}>{error}</p>
-      )}
+      {error && <p className="ov-err">{error}</p>}
 
       {showForm && (
-        <div style={{ marginBottom: "1.5rem" }}>
-          <DeviceInstanceForm
-            item={editingItem}
-            models={models}
-            mode={formMode}
-            onSave={handleSave}
-            onCancel={() => {
-              setShowForm(false);
-              setEditingItem(null);
-            }}
-          />
-        </div>
+        <DeviceInstanceForm
+          item={editingItem}
+          models={models}
+          mode={formMode}
+          onSave={handleSave}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingItem(null);
+          }}
+        />
       )}
 
       {loading ? (
-        <p style={{ fontSize: "0.85rem", color: "#9ca3af" }}>Loading…</p>
+        <p className="ov-empty">
+          {t("inventory.loading", { defaultValue: "Loading…" })}
+        </p>
+      ) : items.length === 0 ? (
+        <p className="ov-empty">
+          {t("inventory.devices.empty", {
+            defaultValue: "No devices recorded for this SmartHome yet.",
+          })}
+        </p>
       ) : (
-        <table className="dhc-manager-table">
-          <thead>
-            <tr>
-              <th>Img</th>
-              <th>Serial</th>
-              <th>Model</th>
-              <th>Type</th>
-              <th>Lifecycle</th>
-              <th>Installed</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.length === 0 ? (
+        <div className="ov-tablewrap">
+          <table className="ov-table">
+            <thead>
               <tr>
-                <td
-                  colSpan={7}
-                  style={{
-                    textAlign: "center",
-                    padding: "1.5rem",
-                    color: "#9ca3af",
-                  }}
-                >
-                  No devices recorded for this SmartHome yet.
-                </td>
+                <th>{t("inventory.col.image", { defaultValue: "Img" })}</th>
+                <th>{t("inventory.col.serial", { defaultValue: "Serial" })}</th>
+                <th>{t("inventory.col.model", { defaultValue: "Model" })}</th>
+                <th>{t("inventory.col.type", { defaultValue: "Type" })}</th>
+                <th>
+                  {t("inventory.col.lifecycle", { defaultValue: "Lifecycle" })}
+                </th>
+                <th>
+                  {t("inventory.col.installed", { defaultValue: "Installed" })}
+                </th>
+                <th className="ov-th-right">
+                  {t("inventory.col.actions", { defaultValue: "Actions" })}
+                </th>
               </tr>
-            ) : (
-              items.map((it) => (
-                <tr key={it.id}>
-                  <td>{thumbOf(it.modelNumber)}</td>
-                  <td style={{ fontFamily: "monospace" }}>
-                    {it.serialNumber}
-                  </td>
-                  <td>{it.modelNumber}</td>
-                  <td>{it.deviceType}</td>
-                  <td>
-                    <span className="dhc-nav-pill">
-                      {LIFECYCLE_LABEL[it.lifecycleState] ||
-                        it.lifecycleState ||
-                        "—"}
-                    </span>
-                  </td>
-                  <td>{it.installationDate || "—"}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="dhc-button-ghost"
-                      onClick={() => {
-                        setEditingItem(it);
-                        setFormMode("view");
-                        setShowForm(true);
-                      }}
-                      style={{ marginRight: "0.4rem" }}
-                    >
-                      View
-                    </button>
-                    <button
-                      type="button"
-                      className="dhc-button-ghost"
-                      onClick={() => {
-                        setEditingItem(it);
-                        setFormMode("edit");
-                        setShowForm(true);
-                      }}
-                      style={{ marginRight: "0.4rem" }}
-                    >
-                      Modify
-                    </button>
-                    <button
-                      type="button"
-                      className="dhc-button-danger"
-                      onClick={() => handleDelete(it)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {items.map((it) => {
+                const [fallback, tone] = LIFECYCLE[it.lifecycleState] || [
+                  it.lifecycleState || "—",
+                  "pending",
+                ];
+                return (
+                  <tr key={it.id}>
+                    <td>{thumbOf(it.modelNumber)}</td>
+                    <td className="ov-mono">{it.serialNumber}</td>
+                    <td className="ov-mono">{it.modelNumber}</td>
+                    <td>{it.deviceType}</td>
+                    <td>
+                      <span className={`ov-pill ov-pill--${tone}`}>
+                        {it.lifecycleState
+                          ? t(`device.lifecycle.${it.lifecycleState}`, {
+                              defaultValue: fallback,
+                            })
+                          : "—"}
+                      </span>
+                    </td>
+                    <td>{it.installationDate || "—"}</td>
+                    <td>
+                      <div className="ov-cell-actions">
+                        <button
+                          type="button"
+                          className="ov-btn ov-btn--ghost"
+                          onClick={() => openForm(it, "view")}
+                        >
+                          {t("inventory.action.view", { defaultValue: "View" })}
+                        </button>
+                        <button
+                          type="button"
+                          className="ov-btn ov-btn--ghost"
+                          onClick={() => openForm(it, "edit")}
+                        >
+                          {t("inventory.action.modify", {
+                            defaultValue: "Modify",
+                          })}
+                        </button>
+                        <button
+                          type="button"
+                          className="ov-btn ov-btn--danger"
+                          onClick={() => handleDelete(it)}
+                        >
+                          {t("inventory.action.delete", {
+                            defaultValue: "Delete",
+                          })}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "gatsby-plugin-react-i18next";
 import { DEVICE_CATEGORIES } from "../constants/deviceTypes";
 
-// DeviceLifecycle enum (backend) → display labels.
+// DeviceLifecycle enum (backend) → fallback labels.
 const LIFECYCLE = [
-  { value: "NEW", label: "New" },
-  { value: "ACTIVE", label: "Active" },
-  { value: "END_OF_LIFE", label: "End of life" },
-  { value: "DECOMMISSIONED", label: "Decommissioned" },
+  ["NEW", "New"],
+  ["ACTIVE", "Active"],
+  ["END_OF_LIFE", "End of life"],
+  ["DECOMMISSIONED", "Decommissioned"],
 ];
 
 /**
@@ -28,6 +29,7 @@ const DeviceInstanceForm = ({
   onSave,
   onCancel,
 }) => {
+  const { t } = useTranslation();
   const isEdit = !!item;
   const [editing, setEditing] = useState(mode !== "view" && canEdit);
   const ro = !editing;
@@ -70,9 +72,7 @@ const DeviceInstanceForm = ({
 
   const selectedModel = models.find((m) => m.modelNumber === modelNumber);
   // deviceType is driven by the chosen model (or kept from a legacy instance).
-  const deviceType = legacy
-    ? item.deviceType
-    : selectedModel?.deviceType || "";
+  const deviceType = legacy ? item.deviceType : selectedModel?.deviceType || "";
 
   const canSubmit =
     !!modelNumber.trim() &&
@@ -105,59 +105,53 @@ const DeviceInstanceForm = ({
     }
   };
 
+  const title = !isEdit
+    ? t("inventory.devices.addTitle", { defaultValue: "Add device" })
+    : ro
+      ? t("inventory.devices.viewTitle", {
+          serial: item.serialNumber,
+          defaultValue: `View device ${item.serialNumber}`,
+        })
+      : t("inventory.devices.editTitle", {
+          serial: item.serialNumber,
+          defaultValue: `Modify device ${item.serialNumber}`,
+        });
+
   return (
-    <form className="dhc-manager-form" onSubmit={handleSubmit}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          margin: "0 0 1rem",
-        }}
-      >
-        <h3 style={{ margin: 0, fontSize: "1rem" }}>
-          {!isEdit
-            ? "Add device"
-            : ro
-            ? `View device ${item.serialNumber}`
-            : `Modify device ${item.serialNumber}`}
-        </h3>
+    <form className="ov-form" onSubmit={handleSubmit}>
+      <div className="ov-form-head">
+        <h3 className="ov-form-title">{title}</h3>
         {isEdit && canEdit && (
           <button
             type="button"
-            className="dhc-button-ghost"
+            className="ov-btn ov-btn--ghost"
             onClick={() => setEditing((v) => !v)}
           >
-            {ro ? "Modify" : "View"}
+            {ro
+              ? t("inventory.action.modify", { defaultValue: "Modify" })
+              : t("inventory.action.view", { defaultValue: "View" })}
           </button>
         )}
       </div>
 
       {legacy && (
-        <p
-          style={{
-            fontSize: "0.75rem",
-            color: "#fbbf24",
-            margin: "-0.5rem 0 1rem",
-          }}
-        >
-          This device references model <code>{item.modelNumber}</code> which is
-          no longer in the catalogue — model/type are read-only.
+        <p className="ov-warn">
+          {t("inventory.devices.legacyModel", {
+            model: item.modelNumber,
+            defaultValue: `This device references model ${item.modelNumber} which is no longer in the catalogue — model/type are read-only.`,
+          })}
         </p>
       )}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "0.6rem",
-        }}
-      >
+      <div className="ov-grid-2">
         {/* ── model-first: Category → Model → derived deviceType ── */}
-        <div className="dhc-form-field">
-          <label className="dhc-form-label">Category</label>
+        <div className="ov-field">
+          <label className="ov-label" htmlFor="di-cat">
+            {t("inventory.catalogue.category", { defaultValue: "Category" })}
+          </label>
           <select
-            className="dhc-form-input"
+            id="di-cat"
+            className="ov-input"
             value={category}
             disabled={legacy || ro}
             onChange={(e) => {
@@ -167,30 +161,37 @@ const DeviceInstanceForm = ({
           >
             {DEVICE_CATEGORIES.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.label}
+                {t(`device.category.${c.id}`, { defaultValue: c.label })}
               </option>
             ))}
           </select>
         </div>
 
-        <div className="dhc-form-field">
-          <label className="dhc-form-label">Model</label>
+        <div className="ov-field">
+          <label className="ov-label" htmlFor="di-model">
+            {t("inventory.col.model", { defaultValue: "Model" })}
+          </label>
           {legacy ? (
             <input
-              className="dhc-form-input"
+              id="di-model"
+              className="ov-input ov-mono"
               value={item.modelNumber}
               readOnly
-              style={{ fontFamily: "monospace", opacity: 0.8 }}
             />
           ) : (
             <select
-              className="dhc-form-input"
+              id="di-model"
+              className="ov-input"
               value={modelNumber}
               onChange={(e) => setModelNumber(e.target.value)}
               disabled={ro}
               required
             >
-              <option value="">— select a model —</option>
+              <option value="">
+                {t("inventory.devices.selectModel", {
+                  defaultValue: "— select a model —",
+                })}
+              </option>
               {modelsInCat.map((m) => (
                 <option key={m.modelNumber} value={m.modelNumber}>
                   {m.modelNumber} — {m.brand}
@@ -202,38 +203,37 @@ const DeviceInstanceForm = ({
       </div>
 
       {!legacy && modelsInCat.length === 0 && (
-        <p
-          style={{
-            fontSize: "0.78rem",
-            color: "#fbbf24",
-            margin: "0.25rem 0 0.75rem",
-          }}
-        >
-          No models in this category yet. Add one in the <strong>Catalogue</strong>{" "}
-          tab (or via the <strong>Inbox</strong>) before recording a device.
+        <p className="ov-warn">
+          {t("inventory.devices.noModelsInCategory", {
+            defaultValue:
+              "No models in this category yet. Add one in the Catalogue tab (or via Import) before recording a device.",
+          })}
         </p>
       )}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "0.6rem",
-        }}
-      >
-        <div className="dhc-form-field">
-          <label className="dhc-form-label">Device type (from model)</label>
+      <div className="ov-grid-2">
+        <div className="ov-field">
+          <label className="ov-label" htmlFor="di-type">
+            {t("inventory.devices.typeFromModel", {
+              defaultValue: "Device type (from model)",
+            })}
+          </label>
           <input
-            className="dhc-form-input"
+            id="di-type"
+            className="ov-input"
             value={deviceType || "—"}
             readOnly
-            style={{ opacity: 0.8 }}
           />
         </div>
-        <div className="dhc-form-field">
-          <label className="dhc-form-label">Serial number</label>
+        <div className="ov-field">
+          <label className="ov-label" htmlFor="di-serial">
+            {t("inventory.devices.serialNumber", {
+              defaultValue: "Serial number",
+            })}
+          </label>
           <input
-            className="dhc-form-input"
+            id="di-serial"
+            className="ov-input ov-mono"
             value={serialNumber}
             onChange={(e) => setSerialNumber(e.target.value)}
             placeholder="SN-000123"
@@ -241,81 +241,112 @@ const DeviceInstanceForm = ({
             required
           />
         </div>
-        <div className="dhc-form-field">
-          <label className="dhc-form-label">Purchase date</label>
+        <div className="ov-field">
+          <label className="ov-label" htmlFor="di-purchase">
+            {t("inventory.devices.purchaseDate", {
+              defaultValue: "Purchase date",
+            })}
+          </label>
           <input
-            className="dhc-form-input"
+            id="di-purchase"
+            className="ov-input"
             type="date"
             value={purchaseDate}
             onChange={(e) => setPurchaseDate(e.target.value)}
             readOnly={ro}
           />
         </div>
-        <div className="dhc-form-field">
-          <label className="dhc-form-label">Installation date</label>
+        <div className="ov-field">
+          <label className="ov-label" htmlFor="di-install">
+            {t("inventory.devices.installationDate", {
+              defaultValue: "Installation date",
+            })}
+          </label>
           <input
-            className="dhc-form-input"
+            id="di-install"
+            className="ov-input"
             type="date"
             value={installationDate}
             onChange={(e) => setInstallationDate(e.target.value)}
             readOnly={ro}
           />
         </div>
-        <div className="dhc-form-field">
-          <label className="dhc-form-label">Firmware version</label>
+        <div className="ov-field">
+          <label className="ov-label" htmlFor="di-fw">
+            {t("inventory.devices.firmware", {
+              defaultValue: "Firmware version",
+            })}
+          </label>
           <input
-            className="dhc-form-input"
+            id="di-fw"
+            className="ov-input"
             value={firmwareVersion}
             onChange={(e) => setFirmwareVersion(e.target.value)}
             placeholder="2.4.1"
             readOnly={ro}
           />
         </div>
-        <div className="dhc-form-field">
-          <label className="dhc-form-label">Lifecycle</label>
+        <div className="ov-field">
+          <label className="ov-label" htmlFor="di-life">
+            {t("inventory.col.lifecycle", { defaultValue: "Lifecycle" })}
+          </label>
           <select
-            className="dhc-form-input"
+            id="di-life"
+            className="ov-input"
             value={lifecycleState}
             onChange={(e) => setLifecycleState(e.target.value)}
             disabled={ro}
           >
-            {LIFECYCLE.map((l) => (
-              <option key={l.value} value={l.value}>
-                {l.label}
+            {LIFECYCLE.map(([value, fallback]) => (
+              <option key={value} value={value}>
+                {t(`device.lifecycle.${value}`, { defaultValue: fallback })}
               </option>
             ))}
           </select>
         </div>
-        <div className="dhc-form-field">
-          <label className="dhc-form-label">Location</label>
+        <div className="ov-field">
+          <label className="ov-label" htmlFor="di-loc">
+            {t("inventory.devices.location", { defaultValue: "Location" })}
+          </label>
           <input
-            className="dhc-form-input"
+            id="di-loc"
+            className="ov-input"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            placeholder="Server room / Living room"
+            placeholder={t("inventory.devices.locationPlaceholder", {
+              defaultValue: "Server room / Living room",
+            })}
             readOnly={ro}
           />
         </div>
       </div>
 
-      {submitError && (
-        <div className="dhc-form-error" style={{ marginTop: "0.5rem" }}>
-          {submitError}
-        </div>
-      )}
+      {submitError && <p className="ov-err">{submitError}</p>}
 
-      <div className="dhc-form-actions">
+      <div className="ov-form-actions">
         {!ro && (
           <button
             type="submit"
-            className="dhc-button-primary"
+            className="ov-btn ov-btn--primary"
             disabled={!canSubmit}
           >
-            {saving ? (isEdit ? "Saving…" : "Adding…") : isEdit ? "Save" : "Add"}
+            {saving
+              ? isEdit
+                ? t("inventory.action.saving", { defaultValue: "Saving…" })
+                : t("inventory.action.adding", { defaultValue: "Adding…" })
+              : isEdit
+                ? t("inventory.action.save", { defaultValue: "Save" })
+                : t("inventory.action.add", { defaultValue: "Add" })}
           </button>
         )}
-        <button type="button" className="dhc-button-ghost" onClick={onCancel}>
-          {ro ? "Close" : "Cancel"}
+        <button
+          type="button"
+          className="ov-btn ov-btn--ghost"
+          onClick={onCancel}
+        >
+          {ro
+            ? t("inventory.action.close", { defaultValue: "Close" })
+            : t("inventory.action.cancel", { defaultValue: "Cancel" })}
         </button>
       </div>
     </form>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "gatsby-plugin-react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { generateClient } from "aws-amplify/api";
 import { listDeviceModels, listDeviceInstances } from "../graphql/queries";
@@ -10,23 +11,12 @@ import {
 import { DEVICE_CATEGORIES, CATEGORY_LABEL } from "../constants/deviceTypes";
 import DeviceModelForm from "./DeviceModelForm";
 
-const Thumb = ({ src }) =>
-  src ? (
-    <img
-      src={src}
-      alt=""
-      style={{
-        width: 36,
-        height: 36,
-        objectFit: "cover",
-        borderRadius: "0.3rem",
-        border: "1px solid rgba(148,163,184,0.3)",
-        verticalAlign: "middle",
-      }}
-    />
-  ) : (
-    <span style={{ color: "#64748b", fontSize: "0.75rem" }}>—</span>
-  );
+const CAPS = [
+  ["hasActorCapability", "actor", "A"],
+  ["hasSensorCapability", "sensor", "S"],
+  ["hasControllerCapability", "controller", "C"],
+  ["hasIOTCapability", "iot", "I"],
+];
 
 /**
  * Device-product catalogue (DeviceModel). Any signed-in user can browse and
@@ -35,6 +25,7 @@ const Thumb = ({ src }) =>
  * references its modelNumber.
  */
 const DeviceCatalogue = () => {
+  const { t } = useTranslation();
   const { isAuthenticated, hasGroup } = useAuth();
   const isAdmin = hasGroup("dhc-admins");
 
@@ -47,6 +38,12 @@ const DeviceCatalogue = () => {
   const [editing, setEditing] = useState(null);
   const [formMode, setFormMode] = useState("edit"); // 'view' | 'edit'
 
+  // Category ids are stored; their labels are display-only, so they translate.
+  const catLabel = (id) =>
+    id
+      ? t(`device.category.${id}`, { defaultValue: CATEGORY_LABEL[id] || id })
+      : "—";
+
   const fetchModels = useCallback(async () => {
     if (!isAuthenticated || typeof window === "undefined") return;
     setLoading(true);
@@ -57,11 +54,15 @@ const DeviceCatalogue = () => {
       setItems(result.data.listDeviceModels.items || []);
     } catch (err) {
       console.error("[DeviceCatalogue] fetch failed:", err);
-      setError("Failed to load the device catalogue.");
+      setError(
+        t("inventory.error.catalogueLoad", {
+          defaultValue: "Failed to load the device catalogue.",
+        })
+      );
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, t]);
 
   useEffect(() => {
     fetchModels();
@@ -110,15 +111,26 @@ const DeviceCatalogue = () => {
           limit: 1,
         },
       });
-      const inUse =
-        (linked.data.listDeviceInstances.items || []).length > 0;
+      const inUse = (linked.data.listDeviceInstances.items || []).length > 0;
       if (inUse) {
         window.alert(
-          `Cannot delete ${it.modelNumber}: at least one device instance is linked to this model. Remove those devices first.`
+          t("inventory.catalogue.deleteInUse", {
+            model: it.modelNumber,
+            defaultValue: `Cannot delete ${it.modelNumber}: at least one device instance is linked to this model. Remove those devices first.`,
+          })
         );
         return;
       }
-      if (!window.confirm(`Remove catalogue model ${it.modelNumber}?`)) return;
+      if (
+        !window.confirm(
+          t("inventory.catalogue.deleteConfirm", {
+            model: it.modelNumber,
+            defaultValue: `Remove catalogue model ${it.modelNumber}?`,
+          })
+        )
+      ) {
+        return;
+      }
       await client.graphql({
         query: deleteDeviceModel,
         variables: { input: { modelNumber: it.modelNumber } },
@@ -130,147 +142,152 @@ const DeviceCatalogue = () => {
   };
 
   return (
-    <div className="dhc-manager-list">
-      <div
-        style={{
-          display: "flex",
-          gap: "0.5rem",
-          marginBottom: "1rem",
-          flexWrap: "wrap",
-          alignItems: "center",
-        }}
-      >
+    <div>
+      <div className="ov-bar">
         <input
           type="text"
-          className="dhc-form-input"
-          placeholder="Search brand / model / type…"
+          className="ov-input ov-input--search"
+          placeholder={t("inventory.catalogue.searchPlaceholder", {
+            defaultValue: "Search brand / model / type…",
+          })}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ maxWidth: "20rem" }}
         />
         <select
-          className="dhc-form-input"
+          className="ov-input"
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          style={{ maxWidth: "16rem" }}
+          aria-label={t("inventory.catalogue.category", {
+            defaultValue: "Category",
+          })}
         >
-          <option value="">All categories</option>
+          <option value="">
+            {t("inventory.catalogue.allCategories", {
+              defaultValue: "All categories",
+            })}
+          </option>
           {DEVICE_CATEGORIES.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.label}
+              {catLabel(c.id)}
             </option>
           ))}
         </select>
-        <div style={{ flex: 1 }} />
+        <div className="ov-bar-spacer" />
         {isAdmin && !showForm && (
           <button
             type="button"
-            className="dhc-button-primary"
+            className="ov-btn ov-btn--primary"
             onClick={() => {
               setEditing(null);
               setFormMode("edit");
               setShowForm(true);
             }}
           >
-            + Add model
+            {t("inventory.catalogue.add", { defaultValue: "+ Add model" })}
           </button>
         )}
       </div>
 
-      {error && (
-        <p style={{ color: "#fca5a5", fontSize: "0.85rem" }}>{error}</p>
-      )}
+      {error && <p className="ov-err">{error}</p>}
 
       {showForm && (
-        <div style={{ marginBottom: "1.5rem" }}>
-          <DeviceModelForm
-            item={editing}
-            mode={formMode}
-            canEdit={isAdmin}
-            onSave={handleSave}
-            onCancel={closeForm}
-          />
-        </div>
+        <DeviceModelForm
+          item={editing}
+          mode={formMode}
+          canEdit={isAdmin}
+          onSave={handleSave}
+          onCancel={closeForm}
+        />
       )}
 
       {loading ? (
-        <p style={{ fontSize: "0.85rem", color: "#9ca3af" }}>Loading…</p>
+        <p className="ov-empty">
+          {t("inventory.loading", { defaultValue: "Loading…" })}
+        </p>
+      ) : filtered.length === 0 ? (
+        <p className="ov-empty">
+          {isAuthenticated
+            ? t("inventory.catalogue.empty", {
+                defaultValue: "No catalogue models match.",
+              })
+            : t("inventory.catalogue.signIn", {
+                defaultValue: "Sign in to browse the device catalogue.",
+              })}
+        </p>
       ) : (
-        <table className="dhc-manager-table">
-          <thead>
-            <tr>
-              <th>Img</th>
-              <th>Model</th>
-              <th>Brand</th>
-              <th>Category</th>
-              <th>Type</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={6}
-                  style={{
-                    textAlign: "center",
-                    padding: "1.5rem",
-                    color: "#9ca3af",
-                  }}
-                >
-                  {isAuthenticated
-                    ? "No catalogue models match."
-                    : "Sign in to browse the device catalogue."}
-                </td>
-              </tr>
-            ) : (
-              filtered.map((it) => (
-                <tr key={it.modelNumber}>
-                  <td>
-                    <Thumb src={it.thumbnail} />
-                  </td>
-                  <td style={{ fontFamily: "monospace" }}>{it.modelNumber}</td>
-                  <td>{it.brand}</td>
-                  <td>
-                    <span className="dhc-nav-pill">
-                      {CATEGORY_LABEL[it.category] || it.category || "—"}
+        <div className="ov-devgrid">
+          {filtered.map((it) => (
+            <article className="ov-devcard" key={it.modelNumber}>
+              <div className="ov-devcard-top">
+                {it.thumbnail ? (
+                  <img className="ov-thumb" src={it.thumbnail} alt="" />
+                ) : (
+                  <span className="ov-thumb--none">—</span>
+                )}
+                <div className="ov-devcard-id">
+                  <p className="ov-devcard-model">{it.modelNumber}</p>
+                  <p className="ov-devcard-brand">
+                    {it.brand}
+                    {it.deviceType ? ` · ${it.deviceType}` : ""}
+                  </p>
+                </div>
+              </div>
+
+              {it.description && (
+                <p className="ov-devcard-desc">{it.description}</p>
+              )}
+
+              <div className="ov-devcard-meta">
+                <span className="ov-pill">{catLabel(it.category)}</span>
+                <span className="ov-caps">
+                  {CAPS.filter(([k]) => it[k]).map(([k, tone, letter]) => (
+                    <span
+                      key={k}
+                      className={`ov-cap ov-cap--${tone}`}
+                      title={t(`device.capability.${tone}`, {
+                        defaultValue: tone,
+                      })}
+                    >
+                      {letter}
                     </span>
-                  </td>
-                  <td>{it.deviceType}</td>
-                  <td>
+                  ))}
+                </span>
+              </div>
+
+              <div className="ov-devcard-actions">
+                <button
+                  type="button"
+                  className="ov-btn ov-btn--ghost"
+                  onClick={() => open(it, "view")}
+                >
+                  {t("inventory.action.view", { defaultValue: "View" })}
+                </button>
+                {isAdmin && (
+                  <>
                     <button
                       type="button"
-                      className="dhc-button-ghost"
-                      onClick={() => open(it, "view")}
-                      style={{ marginRight: "0.4rem" }}
+                      className="ov-btn ov-btn--ghost"
+                      onClick={() => open(it, "edit")}
                     >
-                      View
+                      {t("inventory.action.modify", {
+                        defaultValue: "Modify",
+                      })}
                     </button>
-                    {isAdmin && (
-                      <>
-                        <button
-                          type="button"
-                          className="dhc-button-ghost"
-                          onClick={() => open(it, "edit")}
-                          style={{ marginRight: "0.4rem" }}
-                        >
-                          Modify
-                        </button>
-                        <button
-                          type="button"
-                          className="dhc-button-danger"
-                          onClick={() => handleDelete(it)}
-                        >
-                          Delete
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                    <button
+                      type="button"
+                      className="ov-btn ov-btn--danger"
+                      onClick={() => handleDelete(it)}
+                    >
+                      {t("inventory.action.delete", {
+                        defaultValue: "Delete",
+                      })}
+                    </button>
+                  </>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
       )}
     </div>
   );

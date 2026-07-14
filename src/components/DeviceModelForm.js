@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "gatsby-plugin-react-i18next";
 import { DEVICE_CATEGORIES } from "../constants/deviceTypes";
 import {
   uploadCatalogueAsset,
@@ -10,10 +11,10 @@ import {
  * Create / view / edit a DeviceModel (catalogue). Reused by DeviceCatalogue
  * and Inbox Stage-1. `modelNumber` is the identifier → read-only on edit.
  *
- * v3: capability checkboxes (Actor/Sensor/Controller/IOT — flat booleans,
- * mapped via manifest, NOT T-Box); multi-doc + single-image upload to
+ * Capability checkboxes (Actor/Sensor/Controller/IOT) are flat booleans mapped
+ * via manifest, NOT T-Box. Multi-doc + single-image upload go to
  * public/catalogue/devices/<deviceType>/<modelNumber>/{docs,img}; a small
- * client-generated data-URL `thumbnail` for list views; mode = view | edit
+ * client-generated data-URL `thumbnail` backs the list views. mode = view|edit
  * with an in-form toggle.
  *
  * Non-rendered schema fields (region, standards, compatibleClasses,
@@ -21,10 +22,10 @@ import {
  */
 const PASSTHROUGH = ["region", "standards", "compatibleClasses", "s3SpecsPath"];
 const CAPS = [
-  ["hasActorCapability", "Actor"],
-  ["hasSensorCapability", "Sensor"],
-  ["hasControllerCapability", "Controller"],
-  ["hasIOTCapability", "IOT (connectable)"],
+  ["hasActorCapability", "actor", "Actor"],
+  ["hasSensorCapability", "sensor", "Sensor"],
+  ["hasControllerCapability", "controller", "Controller"],
+  ["hasIOTCapability", "iot", "IOT (connectable)"],
 ];
 const POWER_SOURCES = [
   ["", "—"],
@@ -79,6 +80,7 @@ const DeviceModelForm = ({
   onSave,
   onCancel,
 }) => {
+  const { t } = useTranslation();
   const isEdit = !!item?.modelNumber;
   const [editing, setEditing] = useState(mode !== "view" && canEdit);
 
@@ -87,21 +89,24 @@ const DeviceModelForm = ({
   // back to the last-used pair (session memory) before defaulting to the first
   // category, so consecutive add-flows keep their grouping.
   const fallbackCat =
-    (lastUsedCategory && DEVICE_CATEGORIES.find((c) => c.id === lastUsedCategory)
+    lastUsedCategory && DEVICE_CATEGORIES.find((c) => c.id === lastUsedCategory)
       ? lastUsedCategory
-      : DEVICE_CATEGORIES[0].id);
-  const initialCat =
-    (DEVICE_CATEGORIES.find((c) => c.id === item?.category) ||
-      DEVICE_CATEGORIES.find((c) =>
-        c.subTypes.some((s) => s.label === item?.deviceType)
-      ) ||
-      DEVICE_CATEGORIES.find((c) => c.id === fallbackCat) ||
-      DEVICE_CATEGORIES[0]).id;
-  const initialCatSubTypes = DEVICE_CATEGORIES.find((c) => c.id === initialCat).subTypes;
+      : DEVICE_CATEGORIES[0].id;
+  const initialCat = (
+    DEVICE_CATEGORIES.find((c) => c.id === item?.category) ||
+    DEVICE_CATEGORIES.find((c) =>
+      c.subTypes.some((s) => s.label === item?.deviceType)
+    ) ||
+    DEVICE_CATEGORIES.find((c) => c.id === fallbackCat) ||
+    DEVICE_CATEGORIES[0]
+  ).id;
+  const initialCatSubTypes = DEVICE_CATEGORIES.find(
+    (c) => c.id === initialCat
+  ).subTypes;
   const fallbackDeviceType =
-    (!item?.deviceType &&
-      lastUsedDeviceType &&
-      initialCatSubTypes.some((s) => s.label === lastUsedDeviceType))
+    !item?.deviceType &&
+    lastUsedDeviceType &&
+    initialCatSubTypes.some((s) => s.label === lastUsedDeviceType)
       ? lastUsedDeviceType
       : null;
   const [category, setCategory] = useState(initialCat);
@@ -164,7 +169,11 @@ const DeviceModelForm = ({
     try {
       setThumb(await makeThumbnail(f));
     } catch {
-      setSubmitError("Could not generate a preview from that image.");
+      setSubmitError(
+        t("inventory.model.thumbFailed", {
+          defaultValue: "Could not generate a preview from that image.",
+        })
+      );
     }
   };
 
@@ -248,63 +257,74 @@ const DeviceModelForm = ({
     }
   };
 
+  const title = !isEdit
+    ? t("inventory.model.addTitle", { defaultValue: "Add catalogue model" })
+    : ro
+      ? t("inventory.model.viewTitle", {
+          model: item.modelNumber,
+          defaultValue: `View model ${item.modelNumber}`,
+        })
+      : t("inventory.model.editTitle", {
+          model: item.modelNumber,
+          defaultValue: `Modify model ${item.modelNumber}`,
+        });
+
   return (
-    <form className="dhc-manager-form" onSubmit={handleSubmit}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          margin: "0 0 1rem",
-        }}
-      >
-        <h3 style={{ margin: 0, fontSize: "1rem" }}>
-          {!isEdit
-            ? "Add catalogue model"
-            : ro
-            ? `View model ${item.modelNumber}`
-            : `Modify model ${item.modelNumber}`}
-        </h3>
+    <form className="ov-form" onSubmit={handleSubmit}>
+      <div className="ov-form-head">
+        <h3 className="ov-form-title">{title}</h3>
         {isEdit && canEdit && (
           <button
             type="button"
-            className="dhc-button-ghost"
+            className="ov-btn ov-btn--ghost"
             onClick={() => setEditing((v) => !v)}
           >
-            {ro ? "Modify" : "View"}
+            {ro
+              ? t("inventory.action.modify", { defaultValue: "Modify" })
+              : t("inventory.action.view", { defaultValue: "View" })}
           </button>
         )}
       </div>
 
-      <div className="dhc-form-field">
-        <label className="dhc-form-label">Model number</label>
-        <input
-          className="dhc-form-input"
-          value={modelNumber}
-          onChange={(e) => setModelNumber(e.target.value)}
-          placeholder="ACME-NVR-8CH"
-          readOnly={isEdit || ro}
-          required
-        />
+      <div className="ov-grid-2">
+        <div className="ov-field">
+          <label className="ov-label" htmlFor="dm-model">
+            {t("inventory.model.modelNumber", { defaultValue: "Model number" })}
+          </label>
+          <input
+            id="dm-model"
+            className="ov-input ov-mono"
+            value={modelNumber}
+            onChange={(e) => setModelNumber(e.target.value)}
+            placeholder="ACME-NVR-8CH"
+            readOnly={isEdit || ro}
+            required
+          />
+        </div>
+        <div className="ov-field">
+          <label className="ov-label" htmlFor="dm-brand">
+            {t("inventory.model.brand", { defaultValue: "Brand" })}
+          </label>
+          <input
+            id="dm-brand"
+            className="ov-input"
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+            placeholder="ACME"
+            readOnly={ro}
+            required
+          />
+        </div>
       </div>
-      <div className="dhc-form-field">
-        <label className="dhc-form-label">Brand</label>
-        <input
-          className="dhc-form-input"
-          value={brand}
-          onChange={(e) => setBrand(e.target.value)}
-          placeholder="ACME"
-          readOnly={ro}
-          required
-        />
-      </div>
-      <div
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}
-      >
-        <div className="dhc-form-field">
-          <label className="dhc-form-label">Category</label>
+
+      <div className="ov-grid-2">
+        <div className="ov-field">
+          <label className="ov-label" htmlFor="dm-cat">
+            {t("inventory.catalogue.category", { defaultValue: "Category" })}
+          </label>
           <select
-            className="dhc-form-input"
+            id="dm-cat"
+            className="ov-input"
             value={category}
             disabled={ro}
             onChange={(e) => {
@@ -315,15 +335,20 @@ const DeviceModelForm = ({
           >
             {DEVICE_CATEGORIES.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.label}
+                {t(`device.category.${c.id}`, { defaultValue: c.label })}
               </option>
             ))}
           </select>
         </div>
-        <div className="dhc-form-field">
-          <label className="dhc-form-label">Device type</label>
+        <div className="ov-field">
+          <label className="ov-label" htmlFor="dm-type">
+            {t("inventory.model.deviceType", { defaultValue: "Device type" })}
+          </label>
+          {/* deviceType stores the label itself → never translate the option
+              text, it would corrupt the persisted value. */}
           <select
-            className="dhc-form-input"
+            id="dm-type"
+            className="ov-input"
             value={deviceType}
             disabled={ro}
             onChange={(e) => setDeviceType(e.target.value)}
@@ -336,24 +361,27 @@ const DeviceModelForm = ({
           </select>
         </div>
       </div>
-      <div className="dhc-form-field">
-        <label className="dhc-form-label">Description</label>
+
+      <div className="ov-field">
+        <label className="ov-label" htmlFor="dm-desc">
+          {t("inventory.model.description", { defaultValue: "Description" })}
+        </label>
         <input
-          className="dhc-form-input"
+          id="dm-desc"
+          className="ov-input"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           readOnly={ro}
         />
       </div>
 
-      <div className="dhc-form-field">
-        <label className="dhc-form-label">Capabilities</label>
-        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-          {CAPS.map(([k, lbl]) => (
-            <label
-              key={k}
-              style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.85rem" }}
-            >
+      <div className="ov-field">
+        <span className="ov-label">
+          {t("inventory.model.capabilities", { defaultValue: "Capabilities" })}
+        </span>
+        <div className="ov-checks">
+          {CAPS.map(([k, tone, fallback]) => (
+            <label key={k} className="ov-check">
               <input
                 type="checkbox"
                 checked={!!caps[k]}
@@ -362,44 +390,44 @@ const DeviceModelForm = ({
                   setCaps((c) => ({ ...c, [k]: e.target.checked }))
                 }
               />
-              {lbl}
+              {t(`device.capability.${tone}`, { defaultValue: fallback })}
             </label>
           ))}
         </div>
       </div>
 
-      <div className="dhc-form-field">
-        <label className="dhc-form-label">Power</label>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr 1fr",
-            gap: "0.6rem",
-          }}
-        >
-          <div>
-            <div className="dhc-form-label" style={{ fontSize: "0.7rem" }}>
-              Source
-            </div>
+      <div className="ov-field">
+        <span className="ov-label">
+          {t("inventory.model.power", { defaultValue: "Power" })}
+        </span>
+        <div className="ov-grid-4">
+          <div className="ov-field">
+            <label className="ov-label" htmlFor="dm-src">
+              {t("inventory.model.powerSource", { defaultValue: "Source" })}
+            </label>
             <select
-              className="dhc-form-input"
+              id="dm-src"
+              className="ov-input"
               value={powerSource}
               disabled={ro}
               onChange={(e) => setPowerSource(e.target.value)}
             >
               {POWER_SOURCES.map(([v, l]) => (
                 <option key={v} value={v}>
-                  {l}
+                  {v
+                    ? t(`device.powerSource.${v}`, { defaultValue: l })
+                    : l}
                 </option>
               ))}
             </select>
           </div>
-          <div>
-            <div className="dhc-form-label" style={{ fontSize: "0.7rem" }}>
-              Voltage (V)
-            </div>
+          <div className="ov-field">
+            <label className="ov-label" htmlFor="dm-v">
+              {t("inventory.model.voltage", { defaultValue: "Voltage (V)" })}
+            </label>
             <input
-              className="dhc-form-input"
+              id="dm-v"
+              className="ov-input"
               type="number"
               step="any"
               list="dhc-volts"
@@ -414,12 +442,13 @@ const DeviceModelForm = ({
               ))}
             </datalist>
           </div>
-          <div>
-            <div className="dhc-form-label" style={{ fontSize: "0.7rem" }}>
-              Current (A)
-            </div>
+          <div className="ov-field">
+            <label className="ov-label" htmlFor="dm-a">
+              {t("inventory.model.current", { defaultValue: "Current (A)" })}
+            </label>
             <input
-              className="dhc-form-input"
+              id="dm-a"
+              className="ov-input"
               type="number"
               step="any"
               value={currentA}
@@ -428,12 +457,13 @@ const DeviceModelForm = ({
               placeholder="0.5"
             />
           </div>
-          <div>
-            <div className="dhc-form-label" style={{ fontSize: "0.7rem" }}>
-              Power in (W)
-            </div>
+          <div className="ov-field">
+            <label className="ov-label" htmlFor="dm-w">
+              {t("inventory.model.powerIn", { defaultValue: "Power in (W)" })}
+            </label>
             <input
-              className="dhc-form-input"
+              id="dm-w"
+              className="ov-input"
               type="number"
               step="any"
               value={powerW}
@@ -445,93 +475,101 @@ const DeviceModelForm = ({
         </div>
       </div>
 
-      <div
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem" }}
-      >
-        <div className="dhc-form-field">
-          <label className="dhc-form-label">Image (one)</label>
+      <div className="ov-grid-2">
+        <div className="ov-field">
+          <span className="ov-label">
+            {t("inventory.model.image", { defaultValue: "Image (one)" })}
+          </span>
           {!ro && (
-            <input type="file" accept="image/*" onChange={onImage} />
+            <input
+              className="ov-file"
+              type="file"
+              accept="image/*"
+              onChange={onImage}
+            />
           )}
           {thumb ? (
             <img
+              className="ov-thumb ov-thumb--lg ov-thumb--preview"
               src={thumb}
-              alt="preview"
-              style={{
-                marginTop: "0.4rem",
-                width: 64,
-                height: 64,
-                objectFit: "cover",
-                borderRadius: "0.4rem",
-                border: "1px solid rgba(148,163,184,0.3)",
-              }}
+              alt=""
             />
           ) : remoteImage ? (
-            <div style={{ marginTop: "0.4rem" }}>
+            <>
               <img
+                className="ov-thumb ov-thumb--lg ov-thumb--preview"
                 src={remoteImage.url}
-                alt="pre-uploaded"
-                style={{
-                  width: 64,
-                  height: 64,
-                  objectFit: "cover",
-                  borderRadius: "0.4rem",
-                  border: "1px solid rgba(148,163,184,0.3)",
-                }}
+                alt=""
               />
-              <div
-                style={{
-                  fontSize: "0.7rem",
-                  color: "#9ca3af",
-                  marginTop: "0.2rem",
-                }}
-              >
-                pre-uploaded — will be linked on save
-              </div>
-            </div>
+              <p className="ov-hint">
+                {t("inventory.model.preUploaded", {
+                  defaultValue: "pre-uploaded — will be linked on save",
+                })}
+              </p>
+            </>
           ) : (
-            <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>
-              {item?.s3ImgPath ? "image uploaded" : "no image"}
-            </span>
+            <p className="ov-hint">
+              {item?.s3ImgPath
+                ? t("inventory.model.imageUploaded", {
+                    defaultValue: "image uploaded",
+                  })
+                : t("inventory.model.noImage", { defaultValue: "no image" })}
+            </p>
           )}
         </div>
-        <div className="dhc-form-field">
-          <label className="dhc-form-label">Docs (one or more)</label>
+        <div className="ov-field">
+          <span className="ov-label">
+            {t("inventory.model.docs", { defaultValue: "Docs (one or more)" })}
+          </span>
           {!ro && (
             <input
+              className="ov-file"
               type="file"
               multiple
               onChange={(e) => setDocFiles(Array.from(e.target.files || []))}
             />
           )}
-          <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>
+          <p className="ov-hint">
             {docFiles.length
-              ? `${docFiles.length} file(s) to upload`
+              ? t("inventory.model.docsPending", {
+                  count: docFiles.length,
+                  defaultValue: `${docFiles.length} file(s) to upload`,
+                })
               : item?.s3DocPath
-              ? "docs uploaded"
-              : "no docs"}
-          </span>
+                ? t("inventory.model.docsUploaded", {
+                    defaultValue: "docs uploaded",
+                  })
+                : t("inventory.model.noDocs", { defaultValue: "no docs" })}
+          </p>
         </div>
       </div>
 
-      {submitError && (
-        <div className="dhc-form-error" style={{ marginTop: "0.5rem" }}>
-          {submitError}
-        </div>
-      )}
+      {submitError && <p className="ov-err">{submitError}</p>}
 
-      <div className="dhc-form-actions">
+      <div className="ov-form-actions">
         {!ro && (
           <button
             type="submit"
-            className="dhc-button-primary"
+            className="ov-btn ov-btn--primary"
             disabled={!canSubmit}
           >
-            {saving ? (isEdit ? "Saving…" : "Adding…") : isEdit ? "Save" : "Add"}
+            {saving
+              ? isEdit
+                ? t("inventory.action.saving", { defaultValue: "Saving…" })
+                : t("inventory.action.adding", { defaultValue: "Adding…" })
+              : isEdit
+                ? t("inventory.action.save", { defaultValue: "Save" })
+                : t("inventory.action.add", { defaultValue: "Add" })}
           </button>
         )}
-        <button type="button" className="dhc-button-ghost" onClick={onCancel}>
-          {ro ? "Close" : "Cancel"}
+        <button
+          type="button"
+          className="ov-btn ov-btn--ghost"
+          onClick={onCancel}
+        >
+          {ro
+            ? t("inventory.action.close", { defaultValue: "Close" })
+            : t("inventory.action.cancel", { defaultValue: "Cancel" })}
         </button>
       </div>
     </form>
