@@ -40,6 +40,13 @@ const IC = {
     </>
   ),
   leaf: S(<path d="M5 19c0-8 6-12 14-13 0 9-5 14-14 13z" />),
+  sprout: S(
+    <>
+      <path d="M12 20v-8" />
+      <path d="M12 13c0-4-3-6-7-6 0 4 3 6 7 6z" />
+      <path d="M12 11c0-4 3-6 7-6 0 4-3 6-7 6z" />
+    </>
+  ),
   designer: S(<path d="M5 19 12 5l7 14z" />),
   operator: S(
     <>
@@ -168,6 +175,11 @@ const OverviewShell = ({
   const designerBase = useAppUrl("designer");
   const modelerUrl = useAppUrl("modeler");
   const designerUrl = `${designerBase}?home=${encodeURIComponent(homeId || "")}`;
+  // PermTek-5: the active home's permaculture habitat (its owners start it there).
+  const permtekBase = useAppUrl("permtek5");
+  const permtekUrl = homeId
+    ? `${permtekBase}/?home=${encodeURIComponent(homeId)}`
+    : `${permtekBase}/`;
 
   const cycleLang = () => {
     const list = languages && languages.length ? languages : ["en"];
@@ -212,6 +224,13 @@ const OverviewShell = ({
             icon={IC.designer}
             label="Designer"
             to={designerUrl}
+            external={isAuthenticated}
+            locked={!isAuthenticated}
+          />
+          <NavLink
+            icon={IC.sprout}
+            label="Permaculture"
+            to={permtekUrl}
             external={isAuthenticated}
             locked={!isAuthenticated}
           />
