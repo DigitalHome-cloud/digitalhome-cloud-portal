@@ -2,6 +2,7 @@ import * as React from "react";
 import { graphql, navigate } from "gatsby";
 import { useTranslation } from "gatsby-plugin-react-i18next";
 import OverviewShell from "../components/OverviewShell";
+import TwoStepSignIn from "../components/TwoStepSignIn";
 import { useAuth } from "../context/AuthContext";
 import { useTier } from "../utils/useTier";
 import { generateClient } from "aws-amplify/api";
@@ -281,6 +282,9 @@ const UserProfilePage = () => {
             </span>
           </div>
         </div>
+
+        {/* Two-step sign-in (TOTP): required for administrators */}
+        <TwoStepSignIn email={email} reloadSession={reloadSession} style={cardStyle} />
 
         {/* Editable Cognito attributes */}
         <div className="ov-info-card" style={cardStyle}>
