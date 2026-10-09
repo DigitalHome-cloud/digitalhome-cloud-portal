@@ -14,12 +14,14 @@ const APP_PORTS = {
   portal: 8000,
   designer: 8001,
   modeler: 8002,
+  permtek5: 8003,
 };
 
 const APP_HOSTS = {
   portal: "portal.digitalhome.cloud",
   designer: "designer.digitalhome.cloud",
   modeler: "modeler.digitalhome.cloud",
+  permtek5: "permtek5.digitalhome.cloud",
 };
 
 /**
@@ -36,7 +38,7 @@ function detectNamespace() {
 
 /**
  * Get the URL for a target app, staying within the same namespace.
- * @param {string} appName — "portal", "designer", or "modeler"
+ * @param {string} appName — "portal", "designer", "modeler" or "permtek5"
  * @returns {string} — base URL (no trailing slash)
  */
 function buildUrl(appName, ns) {
