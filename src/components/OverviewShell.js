@@ -40,6 +40,14 @@ const IC = {
     </>
   ),
   leaf: S(<path d="M5 19c0-8 6-12 14-13 0 9-5 14-14 13z" />),
+  ontology: S(
+    <>
+      <circle cx="12" cy="5" r="2" />
+      <circle cx="5" cy="18" r="2" />
+      <circle cx="19" cy="18" r="2" />
+      <path d="M11 7 6 16M13 7l5 9M7 18h10" />
+    </>
+  ),
   sprout: S(
     <>
       <path d="M12 20v-8" />
@@ -179,6 +187,7 @@ const OverviewShell = ({
     "You";
   const homeId = activeHome?.id;
   const designerBase = useAppUrl("designer");
+  const modelerUrl = useAppUrl("modeler");
   const designerUrl = `${designerBase}?home=${encodeURIComponent(homeId || "")}`;
   // PermTek-5: the active home's permaculture habitat (its owners start it there).
   const permtekBase = useAppUrl("permtek5");
@@ -217,6 +226,12 @@ const OverviewShell = ({
             to="/inventory/?tab=catalogue"
             active={active === "catalog"}
             locked={!isAuthenticated}
+          />
+          <NavLink
+            icon={IC.ontology}
+            label="Ontology"
+            to={modelerUrl}
+            external
           />
           <NavLink
             icon={IC.leaf}
