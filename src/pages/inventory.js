@@ -26,10 +26,23 @@ const TABS = [
   ["inbox", "inventory.tab.inbox", "Import (CSV)"],
 ];
 
-const InventoryPage = () => {
+const TAB_IDS = TABS.map(([id]) => id);
+
+const InventoryPage = ({ location }) => {
   const { t } = useTranslation();
   const { isAuthenticated, isLoading } = useAuth();
-  const [tab, setTab] = React.useState("inventory");
+  // ?tab=catalogue opens the catalogue (the rail's Catalog entry); the URL
+  // follows the tab, so a reload or a shared link stays on it.
+  const fromUrl = new URLSearchParams(location?.search || "").get("tab");
+  const [tab, setTabState] = React.useState(TAB_IDS.includes(fromUrl) ? fromUrl : "inventory");
+  React.useEffect(() => {
+    if (TAB_IDS.includes(fromUrl) && fromUrl !== tab) setTabState(fromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromUrl]);
+  const setTab = (id) => {
+    setTabState(id);
+    navigate(id === "inventory" ? location.pathname : `${location.pathname}?tab=${id}`, { replace: true });
+  };
 
   React.useEffect(() => {
     if (!isLoading && !isAuthenticated) navigate("/signin");
@@ -37,7 +50,7 @@ const InventoryPage = () => {
 
   return (
     <OverviewShell
-      active="inventory"
+      active={tab === "catalogue" ? "catalog" : "inventory"}
       title={t("inventory.title", { defaultValue: "Device Inventory" })}
     >
       <div className="ov-page">

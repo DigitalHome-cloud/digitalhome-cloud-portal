@@ -179,7 +179,6 @@ const OverviewShell = ({
     "You";
   const homeId = activeHome?.id;
   const designerBase = useAppUrl("designer");
-  const modelerUrl = useAppUrl("modeler");
   const designerUrl = `${designerBase}?home=${encodeURIComponent(homeId || "")}`;
   // PermTek-5: the active home's permaculture habitat (its owners start it there).
   const permtekBase = useAppUrl("permtek5");
@@ -215,8 +214,9 @@ const OverviewShell = ({
           <NavLink
             icon={IC.catalog}
             label="Catalog"
-            to={modelerUrl}
-            external
+            to="/inventory/?tab=catalogue"
+            active={active === "catalog"}
+            locked={!isAuthenticated}
           />
           <NavLink
             icon={IC.leaf}
