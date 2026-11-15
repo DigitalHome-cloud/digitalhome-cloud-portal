@@ -1,26 +1,24 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useTranslation } from "gatsby-plugin-react-i18next";
 import { DEVICE_CATEGORIES } from "../constants/deviceTypes";
-import {
-  uploadCatalogueAsset,
-  catalogueAssetPath,
-  fetchCatalogueImageUrl,
-} from "../utils/s3";
 
 /**
- * Create / view / edit a DeviceModel (catalogue). Reused by DeviceCatalogue
- * and Inbox Stage-1. `modelNumber` is the identifier → read-only on edit.
+ * Create / view / edit a marketplace article (in the model shape of
+ * utils/market.js). Reused by DeviceCatalogue and Inbox Stage-1.
+ * `modelNumber` (the article's reference) is the identifier → read-only on
+ * edit.
  *
  * Capability checkboxes (Actor/Sensor/Controller/IOT) are flat booleans mapped
- * via manifest, NOT T-Box. Multi-doc + single-image upload go to
- * public/catalogue/devices/<deviceType>/<modelNumber>/{docs,img}; a small
- * client-generated data-URL `thumbnail` backs the list views. mode = view|edit
- * with an in-form toggle.
+ * via manifest, NOT T-Box. The picked image and datasheets are NOT uploaded
+ * here: they come back to the caller as `files: {image, docs}`, which uploads
+ * them by their SHA-256 to the seller's files (utils/market.saveModel). The
+ * data-URL thumbnail is only the preview. mode = view|edit with an in-form
+ * toggle.
  *
- * Non-rendered schema fields (region, standards, compatibleClasses,
- * s3SpecsPath) are preserved from `item` on save.
+ * Non-rendered fields (region, standards, compatibleClasses) are preserved
+ * from `item` on save; the article's other facts are kept by saveModel.
  */
-const PASSTHROUGH = ["region", "standards", "compatibleClasses", "s3SpecsPath"];
+const PASSTHROUGH = ["region", "standards", "compatibleClasses"];
 const CAPS = [
   ["hasActorCapability", "actor", "Actor"],
   ["hasSensorCapability", "sensor", "Sensor"],
@@ -121,31 +119,6 @@ const DeviceModelForm = ({
   const [docFiles, setDocFiles] = useState([]); // File[]
   const [imageFile, setImageFile] = useState(null); // File | null
   const [thumb, setThumb] = useState(item?.thumbnail || null);
-  // Pre-uploaded image discovered at the canonical catalogue path. Surfaces
-  // images pushed via upload_catalogue_images.py before any DeviceModel row
-  // exists. The path (when found) is also stamped into s3ImgPath on save so
-  // the persisted record reflects the existing object.
-  const [remoteImage, setRemoteImage] = useState(null); // {url, path} | null
-  const trimmedModelNumber = modelNumber.trim();
-  useEffect(() => {
-    let cancelled = false;
-    if (item?.thumbnail || item?.s3ImgPath || imageFile) return undefined;
-    if (!trimmedModelNumber || !deviceType) return undefined;
-    fetchCatalogueImageUrl(deviceType, trimmedModelNumber)
-      .then((hit) => {
-        if (!cancelled) setRemoteImage(hit);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    trimmedModelNumber,
-    deviceType,
-    item?.thumbnail,
-    item?.s3ImgPath,
-    imageFile,
-  ]);
   const [powerSource, setPowerSource] = useState(item?.powerSource || "");
   const numStr = (v) => (v == null ? "" : String(v));
   const [voltageV, setVoltageV] = useState(numStr(item?.voltageV));
@@ -184,52 +157,9 @@ const DeviceModelForm = ({
     setSubmitError(null);
     try {
       const mn = modelNumber.trim();
-      let s3DocPath = item?.s3DocPath || null;
-      let s3ImgPath = item?.s3ImgPath || null;
-
-      // Uploads go to the world-readable, admin-write public/catalogue prefix.
-      for (const df of docFiles) {
-        await uploadCatalogueAsset(
-          deviceType,
-          mn,
-          "docs",
-          df.name,
-          df,
-          df.type || "application/octet-stream"
-        );
-        s3DocPath = catalogueAssetPath(deviceType, mn, "docs", "").replace(
-          /\/$/,
-          ""
-        );
-      }
-      if (imageFile) {
-        const ext = (imageFile.name.split(".").pop() || "img").toLowerCase();
-        await uploadCatalogueAsset(
-          deviceType,
-          mn,
-          "img",
-          `cover.${ext}`, // single fixed name → one image (re-upload replaces)
-          imageFile,
-          imageFile.type || "application/octet-stream"
-        );
-        s3ImgPath = catalogueAssetPath(deviceType, mn, "img", "").replace(
-          /\/$/,
-          ""
-        );
-      }
-
       const passthrough = {};
       for (const k of PASSTHROUGH)
         if (item && item[k] != null) passthrough[k] = item[k];
-
-      // No new file picked, no s3ImgPath on the source row, but we did find
-      // a pre-uploaded image at the canonical path → record it on the model.
-      if (!imageFile && !s3ImgPath && remoteImage) {
-        s3ImgPath = catalogueAssetPath(deviceType, mn, "img", "").replace(
-          /\/$/,
-          ""
-        );
-      }
 
       lastUsedCategory = category;
       lastUsedDeviceType = deviceType;
@@ -244,10 +174,8 @@ const DeviceModelForm = ({
         voltageV: voltageV === "" ? null : Number(voltageV),
         currentA: currentA === "" ? null : Number(currentA),
         powerW: powerW === "" ? null : Number(powerW),
-        s3DocPath,
-        s3ImgPath,
-        thumbnail: thumb || null,
         ...passthrough,
+        files: { image: imageFile, docs: docFiles },
         _isEdit: isEdit,
       });
     } catch (err) {
@@ -478,7 +406,9 @@ const DeviceModelForm = ({
       <div className="ov-grid-2">
         <div className="ov-field">
           <span className="ov-label">
-            {t("inventory.model.image", { defaultValue: "Image (one)" })}
+            {t("inventory.model.image", {
+              defaultValue: "Image (the first is the thumbnail)",
+            })}
           </span>
           {!ro && (
             <input
@@ -494,26 +424,9 @@ const DeviceModelForm = ({
               src={thumb}
               alt=""
             />
-          ) : remoteImage ? (
-            <>
-              <img
-                className="ov-thumb ov-thumb--lg ov-thumb--preview"
-                src={remoteImage.url}
-                alt=""
-              />
-              <p className="ov-hint">
-                {t("inventory.model.preUploaded", {
-                  defaultValue: "pre-uploaded — will be linked on save",
-                })}
-              </p>
-            </>
           ) : (
             <p className="ov-hint">
-              {item?.s3ImgPath
-                ? t("inventory.model.imageUploaded", {
-                    defaultValue: "image uploaded",
-                  })
-                : t("inventory.model.noImage", { defaultValue: "no image" })}
+              {t("inventory.model.noImage", { defaultValue: "no image" })}
             </p>
           )}
         </div>
@@ -526,6 +439,7 @@ const DeviceModelForm = ({
               className="ov-file"
               type="file"
               multiple
+              accept="application/pdf"
               onChange={(e) => setDocFiles(Array.from(e.target.files || []))}
             />
           )}
@@ -535,9 +449,10 @@ const DeviceModelForm = ({
                   count: docFiles.length,
                   defaultValue: `${docFiles.length} file(s) to upload`,
                 })
-              : item?.s3DocPath
+              : item?.datasheets?.length
                 ? t("inventory.model.docsUploaded", {
-                    defaultValue: "docs uploaded",
+                    count: item.datasheets.length,
+                    defaultValue: `${item.datasheets.length} datasheet(s)`,
                   })
                 : t("inventory.model.noDocs", { defaultValue: "no docs" })}
           </p>

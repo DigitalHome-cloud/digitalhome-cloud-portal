@@ -19,10 +19,10 @@ import "../styles/overview.css";
 import "../styles/inventory.css";
 
 // Device Inventory — central admin surface, inside the Overview left-rail shell.
-// Three tabs: the devices of the active home, the global catalogue, CSV import.
+// Three tabs: the devices of the active home, the marketplace, CSV import.
 const TABS = [
   ["inventory", "inventory.tab.inventory", "My devices"],
-  ["catalogue", "inventory.tab.catalogue", "Catalogue"],
+  ["catalogue", "inventory.tab.catalogue", "Marketplace"],
   ["inbox", "inventory.tab.inbox", "Import (CSV)"],
 ];
 

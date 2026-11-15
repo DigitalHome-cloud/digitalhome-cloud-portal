@@ -4,10 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import { useSmartHome } from "../context/SmartHomeContext";
 import DeviceInstanceForm from "./DeviceInstanceForm";
 import { generateClient } from "aws-amplify/api";
-import {
-  listDeviceInstanceBySmartHomeId,
-  listDeviceModels,
-} from "../graphql/queries";
+import { listDeviceInstanceBySmartHomeId } from "../graphql/queries";
+import { loadModels } from "../utils/market";
 import {
   createDeviceInstance,
   updateDeviceInstance,
@@ -45,8 +43,14 @@ const DeviceInventoryManager = () => {
   const [editingItem, setEditingItem] = useState(null);
   const [formMode, setFormMode] = useState("edit"); // 'view' | 'edit'
 
-  const thumbOf = (mn) => {
-    const src = (models.find((m) => m.modelNumber === mn) || {}).thumbnail;
+  // The marketplace article a device was made from: by its IRI when the row
+  // has one, else (older rows) by the model number.
+  const thumbOf = (it) => {
+    const src = (
+      models.find((m) => it.article && m.article === it.article) ||
+      models.find((m) => m.modelNumber === it.modelNumber) ||
+      {}
+    ).thumbnail;
     return src ? (
       <img className="ov-thumb" src={src} alt="" />
     ) : (
@@ -65,10 +69,10 @@ const DeviceInventoryManager = () => {
           query: listDeviceInstanceBySmartHomeId,
           variables: { smartHomeId: homeId },
         }),
-        client.graphql({ query: listDeviceModels }),
+        loadModels(),
       ]);
       setItems(instRes.data.listDeviceInstanceBySmartHomeId.items || []);
-      setModels(modelRes.data.listDeviceModels.items || []);
+      setModels(modelRes.models);
     } catch (err) {
       console.error("[DeviceInventory] fetch failed:", err);
       setError(
@@ -228,7 +232,7 @@ const DeviceInventoryManager = () => {
                 ];
                 return (
                   <tr key={it.id}>
-                    <td>{thumbOf(it.modelNumber)}</td>
+                    <td>{thumbOf(it)}</td>
                     <td className="ov-mono">{it.serialNumber}</td>
                     <td className="ov-mono">{it.modelNumber}</td>
                     <td>{it.deviceType}</td>

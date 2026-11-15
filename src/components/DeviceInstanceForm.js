@@ -12,14 +12,14 @@ const LIFECYCLE = [
 
 /**
  * Create / edit a DeviceInstance — **model-first**: pick a Category, then an
- * existing DeviceModel from the catalogue (filtered by category); the chosen
- * model drives `modelNumber` + `deviceType`. You cannot record a device for a
+ * article of the marketplace (filtered by category); the chosen article
+ * drives `article` (its IRI), `modelNumber` (its reference) + `deviceType`. You cannot record a device for a
  * model that doesn't exist (add it in Catalogue/Inbox first). Editing a
  * legacy instance whose model is no longer in the catalogue falls back to a
  * read-only modelNumber so the row stays editable.
  *
- * Props: { item, models, onSave, onCancel }. `models` = DeviceModel[] from
- * the catalogue. smartHomeId + owners are injected by the caller.
+ * Props: { item, models, onSave, onCancel }. `models` = marketplace articles
+ * in the model shape of utils/market.js (seller, article, modelNumber …). smartHomeId + owners are injected by the caller.
  */
 const DeviceInstanceForm = ({
   item,
@@ -33,23 +33,23 @@ const DeviceInstanceForm = ({
   const isEdit = !!item;
   const [editing, setEditing] = useState(mode !== "view" && canEdit);
   const ro = !editing;
-  const knownModel = models.find((m) => m.modelNumber === item?.modelNumber);
+  // By the article's IRI; rows from before the marketplace only have the
+  // model number.
+  const knownModel =
+    models.find((m) => item?.article && m.article === item.article) ||
+    models.find((m) => m.modelNumber === item?.modelNumber);
   const legacy = isEdit && !!item?.modelNumber && !knownModel;
 
   const initialCat =
-    (models.find((m) => m.modelNumber === item?.modelNumber)?.category &&
-      DEVICE_CATEGORIES.find(
-        (c) =>
-          c.id ===
-          models.find((m) => m.modelNumber === item?.modelNumber)?.category
-      )?.id) ||
+    (knownModel?.category &&
+      DEVICE_CATEGORIES.find((c) => c.id === knownModel.category)?.id) ||
     DEVICE_CATEGORIES.find((c) =>
       c.subTypes.some((s) => s.label === item?.deviceType)
     )?.id ||
     DEVICE_CATEGORIES[0].id;
 
   const [category, setCategory] = useState(initialCat);
-  const [modelNumber, setModelNumber] = useState(item?.modelNumber || "");
+  const [article, setArticle] = useState(knownModel?.article || "");
   const [serialNumber, setSerialNumber] = useState(item?.serialNumber || "");
   const [purchaseDate, setPurchaseDate] = useState(item?.purchaseDate || "");
   const [installationDate, setInstallationDate] = useState(
@@ -70,7 +70,12 @@ const DeviceInstanceForm = ({
     [models, category]
   );
 
-  const selectedModel = models.find((m) => m.modelNumber === modelNumber);
+  const selectedModel = models.find((m) => m.article === article);
+  const modelNumber = legacy ? item.modelNumber : selectedModel?.modelNumber || "";
+  const brandsOf = (m) => (m.brand ? ` — ${m.brand}` : "");
+  // The same reference can be sold by two sellers: then the seller is named.
+  const twice = (m) =>
+    modelsInCat.filter((x) => x.modelNumber === m.modelNumber).length > 1;
   // deviceType is driven by the chosen model (or kept from a legacy instance).
   const deviceType = legacy ? item.deviceType : selectedModel?.deviceType || "";
 
@@ -90,6 +95,7 @@ const DeviceInstanceForm = ({
       await onSave({
         ...(isEdit ? { id: item.id } : {}),
         modelNumber: modelNumber.trim(),
+        ...(legacy ? {} : { article }),
         serialNumber: serialNumber.trim(),
         deviceType,
         purchaseDate: purchaseDate || null,
@@ -156,7 +162,7 @@ const DeviceInstanceForm = ({
             disabled={legacy || ro}
             onChange={(e) => {
               setCategory(e.target.value);
-              setModelNumber("");
+              setArticle("");
             }}
           >
             {DEVICE_CATEGORIES.map((c) => (
@@ -182,8 +188,8 @@ const DeviceInstanceForm = ({
             <select
               id="di-model"
               className="ov-input"
-              value={modelNumber}
-              onChange={(e) => setModelNumber(e.target.value)}
+              value={article}
+              onChange={(e) => setArticle(e.target.value)}
               disabled={ro}
               required
             >
@@ -193,8 +199,10 @@ const DeviceInstanceForm = ({
                 })}
               </option>
               {modelsInCat.map((m) => (
-                <option key={m.modelNumber} value={m.modelNumber}>
-                  {m.modelNumber} — {m.brand}
+                <option key={m.article} value={m.article}>
+                  {m.modelNumber}
+                  {brandsOf(m)}
+                  {twice(m) ? ` (${m.seller})` : ""}
                 </option>
               ))}
             </select>

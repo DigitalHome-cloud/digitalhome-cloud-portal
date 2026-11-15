@@ -2,14 +2,16 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "gatsby-plugin-react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { generateClient } from "aws-amplify/api";
-import { listDeviceModels, listDeviceInstances } from "../graphql/queries";
-import {
-  createDeviceModel,
-  updateDeviceModel,
-  deleteDeviceModel,
-} from "../graphql/mutations";
+import { listDeviceInstances } from "../graphql/queries";
 import { DEVICE_CATEGORIES, CATEGORY_LABEL } from "../constants/deviceTypes";
 import DeviceModelForm from "./DeviceModelForm";
+import SellersAdmin from "./SellersAdmin";
+import {
+  listSellers,
+  loadModels,
+  saveModel,
+  removeModel,
+} from "../utils/market";
 
 const CAPS = [
   ["hasActorCapability", "actor", "A"],
@@ -19,24 +21,33 @@ const CAPS = [
 ];
 
 /**
- * Device-product catalogue (DeviceModel). Any signed-in user can browse and
- * **View** a model (read-only); dhc-admins can add / modify / delete via the
- * shared DeviceModelForm. A model can only be deleted when no DeviceInstance
- * references its modelNumber.
+ * The digitalhome.cloud marketplace: every seller's catalogue graph, read as
+ * articles (utils/market.js). Any signed-in user browses and **views**; a
+ * seller's editors (group market-<seller>, with an authenticator app) add,
+ * modify and remove that seller's articles. dhc-admins manage the sellers.
+ * An article can only be removed when no DeviceInstance uses it.
  */
 const DeviceCatalogue = () => {
   const { t } = useTranslation();
   const { isAuthenticated, hasGroup } = useAuth();
   const isAdmin = hasGroup("dhc-admins");
 
+  const [sellers, setSellers] = useState([]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [sellerFilter, setSellerFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [formMode, setFormMode] = useState("edit"); // 'view' | 'edit'
+  const [newSeller, setNewSeller] = useState("");
+  const [showSellers, setShowSellers] = useState(false);
+
+  const editable = sellers.filter((s) => s.mayEdit);
+  const sellerName = (id) => sellers.find((s) => s.id === id)?.name || id;
+  const mayEdit = (id) => !!sellers.find((s) => s.id === id)?.mayEdit;
 
   // Category ids are stored; their labels are display-only, so they translate.
   const catLabel = (id) =>
@@ -44,19 +55,19 @@ const DeviceCatalogue = () => {
       ? t(`device.category.${id}`, { defaultValue: CATEGORY_LABEL[id] || id })
       : "—";
 
-  const fetchModels = useCallback(async () => {
+  const fetchAll = useCallback(async () => {
     if (!isAuthenticated || typeof window === "undefined") return;
     setLoading(true);
     setError(null);
     try {
-      const client = generateClient();
-      const result = await client.graphql({ query: listDeviceModels });
-      setItems(result.data.listDeviceModels.items || []);
+      const [s, m] = await Promise.all([listSellers(), loadModels()]);
+      setSellers(s);
+      setItems(m.models);
     } catch (err) {
-      console.error("[DeviceCatalogue] fetch failed:", err);
+      console.error("[Marketplace] fetch failed:", err);
       setError(
         t("inventory.error.catalogueLoad", {
-          defaultValue: "Failed to load the device catalogue.",
+          defaultValue: "Failed to load the marketplace.",
         })
       );
     } finally {
@@ -65,8 +76,12 @@ const DeviceCatalogue = () => {
   }, [isAuthenticated, t]);
 
   useEffect(() => {
-    fetchModels();
-  }, [fetchModels]);
+    fetchAll();
+  }, [fetchAll]);
+
+  useEffect(() => {
+    if (!newSeller && editable.length) setNewSeller(editable[0].id);
+  }, [editable, newSeller]);
 
   const filtered = items.filter((it) => {
     const q = search.toLowerCase();
@@ -77,7 +92,8 @@ const DeviceCatalogue = () => {
       (it.deviceType || "").toLowerCase().includes(q) ||
       (it.description || "").toLowerCase().includes(q);
     const matchesCat = !categoryFilter || it.category === categoryFilter;
-    return matchesSearch && matchesCat;
+    const matchesSeller = !sellerFilter || it.seller === sellerFilter;
+    return matchesSearch && matchesCat && matchesSeller;
   });
 
   const open = (it, m) => {
@@ -90,24 +106,31 @@ const DeviceCatalogue = () => {
     setEditing(null);
   };
 
-  const handleSave = async ({ _isEdit, ...input }) => {
-    const client = generateClient();
-    await client.graphql({
-      query: _isEdit ? updateDeviceModel : createDeviceModel,
-      variables: { input },
+  // The form throws on a refusal, so a conflict or an invalid article shows
+  // in the form, and the person's input stays.
+  const handleSave = async ({ _isEdit, files, ...values }) => {
+    const seller = editing?.seller || newSeller;
+    await saveModel(seller, editing, values, {
+      image: files?.image || null,
+      docs: files?.docs || [],
     });
     closeForm();
-    await fetchModels();
+    await fetchAll();
   };
 
   const handleDelete = async (it) => {
     const client = generateClient();
     try {
-      // Guard: refuse if any DeviceInstance references this model.
+      // Guard: refuse if any DeviceInstance uses this article.
       const linked = await client.graphql({
         query: listDeviceInstances,
         variables: {
-          filter: { modelNumber: { eq: it.modelNumber } },
+          filter: {
+            or: [
+              { article: { eq: it.article } },
+              { modelNumber: { eq: it.modelNumber } },
+            ],
+          },
           limit: 1,
         },
       });
@@ -131,11 +154,8 @@ const DeviceCatalogue = () => {
       ) {
         return;
       }
-      await client.graphql({
-        query: deleteDeviceModel,
-        variables: { input: { modelNumber: it.modelNumber } },
-      });
-      fetchModels();
+      await removeModel(it);
+      fetchAll();
     } catch (err) {
       setError(err?.errors?.[0]?.message || err?.message || String(err));
     }
@@ -153,6 +173,21 @@ const DeviceCatalogue = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <select
+          className="ov-input"
+          value={sellerFilter}
+          onChange={(e) => setSellerFilter(e.target.value)}
+          aria-label={t("market.seller", { defaultValue: "Seller" })}
+        >
+          <option value="">
+            {t("market.allSellers", { defaultValue: "All sellers" })}
+          </option>
+          {sellers.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name} ({s.articles ?? 0})
+            </option>
+          ))}
+        </select>
         <select
           className="ov-input"
           value={categoryFilter}
@@ -173,28 +208,62 @@ const DeviceCatalogue = () => {
           ))}
         </select>
         <div className="ov-bar-spacer" />
-        {isAdmin && !showForm && (
+        {isAdmin && (
           <button
             type="button"
-            className="ov-btn ov-btn--primary"
-            onClick={() => {
-              setEditing(null);
-              setFormMode("edit");
-              setShowForm(true);
-            }}
+            className="ov-btn ov-btn--ghost"
+            onClick={() => setShowSellers((v) => !v)}
           >
-            {t("inventory.catalogue.add", { defaultValue: "+ Add model" })}
+            {t("market.manageSellers", { defaultValue: "Sellers" })}
           </button>
+        )}
+        {editable.length > 0 && !showForm && (
+          <>
+            {editable.length > 1 && (
+              <select
+                className="ov-input"
+                value={newSeller}
+                onChange={(e) => setNewSeller(e.target.value)}
+                aria-label={t("market.addFor", {
+                  defaultValue: "Add an article for",
+                })}
+              >
+                {editable.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button
+              type="button"
+              className="ov-btn ov-btn--primary"
+              onClick={() => {
+                setEditing(null);
+                setFormMode("edit");
+                setShowForm(true);
+              }}
+            >
+              {t("market.addArticle", {
+                seller: sellerName(newSeller),
+                defaultValue: `+ Add article (${sellerName(newSeller)})`,
+              })}
+            </button>
+          </>
         )}
       </div>
 
       {error && <p className="ov-err">{error}</p>}
 
+      {isAdmin && showSellers && (
+        <SellersAdmin sellers={sellers} onChanged={fetchAll} />
+      )}
+
       {showForm && (
         <DeviceModelForm
           item={editing}
           mode={formMode}
-          canEdit={isAdmin}
+          canEdit={editing ? mayEdit(editing.seller) : true}
           onSave={handleSave}
           onCancel={closeForm}
         />
@@ -217,7 +286,7 @@ const DeviceCatalogue = () => {
       ) : (
         <div className="ov-devgrid">
           {filtered.map((it) => (
-            <article className="ov-devcard" key={it.modelNumber}>
+            <article className="ov-devcard" key={it.article}>
               <div className="ov-devcard-top">
                 {it.thumbnail ? (
                   <img className="ov-thumb" src={it.thumbnail} alt="" />
@@ -239,6 +308,12 @@ const DeviceCatalogue = () => {
 
               <div className="ov-devcard-meta">
                 <span className="ov-pill">{catLabel(it.category)}</span>
+                <span
+                  className="ov-pill"
+                  title={t("market.seller", { defaultValue: "Seller" })}
+                >
+                  {sellerName(it.seller)}
+                </span>
                 <span className="ov-caps">
                   {CAPS.filter(([k]) => it[k]).map(([k, tone, letter]) => (
                     <span
@@ -262,7 +337,7 @@ const DeviceCatalogue = () => {
                 >
                   {t("inventory.action.view", { defaultValue: "View" })}
                 </button>
-                {isAdmin && (
+                {mayEdit(it.seller) && (
                   <>
                     <button
                       type="button"

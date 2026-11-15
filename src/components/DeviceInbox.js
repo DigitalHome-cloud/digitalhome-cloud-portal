@@ -3,24 +3,21 @@ import { useTranslation } from "gatsby-plugin-react-i18next";
 import { useAuth } from "../context/AuthContext";
 import { useSmartHome } from "../context/SmartHomeContext";
 import { generateClient } from "aws-amplify/api";
+import { listDeviceInstanceBySmartHomeId } from "../graphql/queries";
 import {
-  listDeviceModels,
-  listDeviceInstanceBySmartHomeId,
-} from "../graphql/queries";
-import {
-  createDeviceModel,
-  updateDeviceModel,
   createDeviceInstance,
   updateDeviceInstance,
 } from "../graphql/mutations";
 import { readInbox, writeInbox } from "../utils/s3";
 import { CSV_TEMPLATE, rowsToInbox } from "../utils/csvTemplate";
+import { listSellers, loadModels, saveModel as saveArticle } from "../utils/market";
 import DeviceModelForm from "./DeviceModelForm";
 import DeviceInstanceForm from "./DeviceInstanceForm";
 
 /**
  * CSV mass-import inbox. Upload one combined CSV → devices/inbox.json, then a
- * two-stage review: Stage 1 Models (match by modelNumber), Stage 2 Devices
+ * two-stage review: Stage 1 Models (match by modelNumber; saved as articles
+ * of a marketplace seller the person edits), Stage 2 Devices
  * (match by serialNumber). Existing → prefilled modify, new → create.
  * Progress (`_status`) is persisted back to inbox.json after every action so
  * it survives reloads.
@@ -36,10 +33,14 @@ const STATUS_FALLBACK = {
 
 const DeviceInbox = () => {
   const { t } = useTranslation();
-  const { isAuthenticated, user, hasGroup } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { activeHome } = useSmartHome();
   const homeId = activeHome?.id || "";
-  const isAdmin = hasGroup("dhc-admins");
+  // Stage 1 writes into a seller's catalogue: one the person is an editor of.
+  const [sellers, setSellers] = useState([]);
+  const [seller, setSeller] = useState("");
+  const editable = sellers.filter((s) => s.mayEdit);
+  const isAdmin = editable.length > 0;
 
   const [inbox, setInbox] = useState(null); // {importedAt, models, devices, skipped}
   const [models, setModels] = useState([]); // existing catalogue
@@ -66,14 +67,17 @@ const DeviceInbox = () => {
     setError(null);
     try {
       const client = generateClient();
-      const [mRes, dRes] = await Promise.all([
-        client.graphql({ query: listDeviceModels }),
+      const [sRes, mRes, dRes] = await Promise.all([
+        listSellers(),
+        loadModels(),
         client.graphql({
           query: listDeviceInstanceBySmartHomeId,
           variables: { smartHomeId: homeId },
         }),
       ]);
-      setModels(mRes.data.listDeviceModels.items || []);
+      setSellers(sRes);
+      setSeller((cur) => cur || sRes.find((x) => x.mayEdit)?.id || "");
+      setModels(mRes.models);
       setDevices(dRes.data.listDeviceInstanceBySmartHomeId.items || []);
       const existing = await readInbox(homeId);
       if (existing) setInbox(existing);
@@ -177,17 +181,18 @@ const DeviceInbox = () => {
     return persist(next);
   };
 
-  const saveModel = async ({ _isEdit, ...input }) => {
-    const client = generateClient();
-    const exists = models.some((m) => m.modelNumber === input.modelNumber);
-    await client.graphql({
-      query: exists ? updateDeviceModel : createDeviceModel,
-      variables: { input },
+  const saveModel = async ({ _isEdit, files, ...values }) => {
+    const previous =
+      models.find(
+        (m) => m.seller === seller && m.modelNumber === values.modelNumber
+      ) || null;
+    await saveArticle(seller, previous, values, {
+      image: files?.image || null,
+      docs: files?.docs || [],
     });
-    await markRow("model", input.modelNumber, "done");
+    await markRow("model", values.modelNumber, "done");
     setEditing(null);
-    const mRes = await client.graphql({ query: listDeviceModels });
-    setModels(mRes.data.listDeviceModels.items || []);
+    setModels((await loadModels()).models);
   };
 
   const saveDevice = async (args) => {
@@ -392,6 +397,25 @@ const DeviceInbox = () => {
         />
       )}
 
+      {inbox && !editing && stage === "models" && editable.length > 1 && (
+        <div className="ov-bar">
+          <label className="ov-label" htmlFor="inbox-seller">
+            {t("market.addFor", { defaultValue: "Add an article for" })}
+          </label>
+          <select
+            id="inbox-seller"
+            className="ov-input"
+            value={seller}
+            onChange={(e) => setSeller(e.target.value)}
+          >
+            {editable.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {inbox && !editing && stage === "models" && (
         <div className="ov-tablewrap">
           <table className="ov-table">
@@ -444,7 +468,7 @@ const DeviceInbox = () => {
                             !isAdmin
                               ? t("inventory.inbox.adminRequired", {
                                   defaultValue:
-                                    "Catalogue writes require dhc-admins",
+                                    "Only a marketplace seller's editors add articles",
                                 })
                               : undefined
                           }
