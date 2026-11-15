@@ -28,6 +28,38 @@ import "../styles/overview.css";
 
 I18n.putVocabularies(translations);
 
+// Amplify's own words for the second step say "TOTP" and "MFA". People see
+// these at sign-in, so they are said plainly here, in each language.
+I18n.putVocabularies({
+  en: {
+    "Confirm TOTP Code": "Enter the 6-digit code from your authenticator app",
+    "Setup TOTP": "Set up two-step sign-in: scan the QR code with your authenticator app, then enter the 6-digit code it shows",
+    "Authenticator App (TOTP)": "Authenticator app (a 6-digit code on your phone)",
+    "Confirm MFA Code": "Enter your sign-in code",
+    "Multi-Factor Authentication": "Two-step sign-in",
+    "Multi-Factor Authentication Setup": "Set up two-step sign-in",
+    "Select MFA Type": "How do you want to receive your sign-in code?",
+  },
+  fr: {
+    "Confirm TOTP Code": "Saisissez le code à 6 chiffres de votre application d’authentification",
+    "Setup TOTP": "Activez la connexion en deux étapes : scannez le QR code avec votre application d’authentification, puis saisissez le code à 6 chiffres affiché",
+    "Authenticator App (TOTP)": "Application d’authentification (un code à 6 chiffres sur votre téléphone)",
+    "Confirm MFA Code": "Saisissez votre code de connexion",
+    "Multi-Factor Authentication": "Connexion en deux étapes",
+    "Multi-Factor Authentication Setup": "Activer la connexion en deux étapes",
+    "Select MFA Type": "Comment voulez-vous recevoir votre code de connexion ?",
+  },
+  de: {
+    "Confirm TOTP Code": "Geben Sie den 6-stelligen Code aus Ihrer Authentifizierungs-App ein",
+    "Setup TOTP": "Anmeldung in zwei Schritten einrichten: QR-Code mit Ihrer Authentifizierungs-App scannen, dann den angezeigten 6-stelligen Code eingeben",
+    "Authenticator App (TOTP)": "Authentifizierungs-App (ein 6-stelliger Code auf Ihrem Handy)",
+    "Confirm MFA Code": "Geben Sie Ihren Anmeldecode ein",
+    "Multi-Factor Authentication": "Anmeldung in zwei Schritten",
+    "Multi-Factor Authentication Setup": "Anmeldung in zwei Schritten einrichten",
+    "Select MFA Type": "Wie möchten Sie Ihren Anmeldecode erhalten?",
+  },
+});
+
 const GREEN = "var(--ov-green)";
 const GREEN_HI = "#7fbe8e";
 const LINE = "rgba(120, 140, 130, 0.3)";
