@@ -45,6 +45,17 @@ const LINK_EDGE_TO_HOME = /* GraphQL */ `
 
 const shortId = (id) => (id ? id.replace(/^e-/, "").slice(0, 8) : "—");
 
+// An edge reports dhe_version either as a bare version ("0.0.0-dev", the DevOps
+// edge) or as "<tool> <version>" ("digitalhome-pro-edge 0.1.0", edges from
+// template-dlab5-edge). Put the "v" before the version, not before the name.
+export const edgeVersion = (raw) => {
+  const s = String(raw || "").trim();
+  if (!s) return "—";
+  const m = s.match(/^(?:(.*\S)\s+)?v?(\d[\w.+-]*)$/);
+  if (!m) return s;
+  return m[1] ? `${m[1]} v${m[2]}` : `v${m[2]}`;
+};
+
 // Status. For now an edge is "Active" as soon as it is added — the real up/down
 // signal comes from the edge → cloud heartbeat, which lands with the edge data
 // lake pipeline. When that exists, replace this with a heartbeat-recency check.
@@ -93,7 +104,7 @@ const EdgeRow = ({
       </div>
       <StatusPill active={isEdgeActive(e)} />
       <span className="ov-edge-ver">
-        {e.dhe_version ? `v${e.dhe_version}` : "—"}
+        {edgeVersion(e.dhe_version)}
       </span>
       <button
         type="button"
