@@ -271,7 +271,7 @@ const OverviewShell = ({
               <NavLink
                 icon={IC.userPlus}
                 label="Sign up"
-                to="/signin"
+                to="/signin?mode=signup"
                 variant="primary"
               />
               <NavLink
