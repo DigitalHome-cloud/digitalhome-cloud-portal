@@ -55,6 +55,12 @@ const IC = {
     </>
   ),
   fleet: S(<path d="M12 4 5 7v5c0 4 3 7 7 8 4-1 7-4 7-8V7z" />),
+  link: S(
+    <>
+      <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
+      <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+    </>
+  ),
   inventory: S(
     <>
       <rect x="3" y="8" width="18" height="12" rx="2" />
@@ -245,6 +251,13 @@ const OverviewShell = ({
             label="Fleet"
             to="/fleet"
             active={active === "fleet"}
+            locked={!isAuthenticated}
+          />
+          <NavLink
+            icon={IC.link}
+            label="Link an edge"
+            to="/link"
+            active={active === "link"}
             locked={!isAuthenticated}
           />
           <NavLink

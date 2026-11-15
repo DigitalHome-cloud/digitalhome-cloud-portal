@@ -1,11 +1,20 @@
 import * as React from "react";
-import Layout from "../components/Layout";
+import OverviewShell from "../components/OverviewShell";
 import { useTranslation } from "gatsby-plugin-react-i18next";
-import { graphql, navigate } from "gatsby";
+import { graphql, navigate, Link } from "gatsby";
 import { useAuth } from "../context/AuthContext";
 import { generateClient } from "aws-amplify/api";
 
-// Edge ↔ Cloud pairing approval page (DH-SPEC-100 / edge-cloud-api.md §2).
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/500.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/600.css";
+import "../styles/overview.css";
+import "../styles/link.css";
+
+// Edge ↔ Cloud pairing approval page (DH-SPEC-100 / edge-cloud-api.md §2),
+// in the Overview rail shell (Manage → Link an edge).
 //
 // An edge box shows a QR code / user_code on its local dashboard; the homeowner
 // opens verification_uri_complete (this page, with ?user_code=…), signs in with
@@ -162,7 +171,7 @@ const LinkPage = ({ location }) => {
         setError(
           t("link.notFound", {
             defaultValue:
-              "No pending device found for that code. Check the code on your box's screen — it may have expired (they last 10 minutes).",
+              "No edge is waiting with that code. Check it on the edge's page: a code is valid for 10 minutes, then the edge needs a new one.",
           })
         );
       } finally {
@@ -198,6 +207,14 @@ const LinkPage = ({ location }) => {
       if (initialUserCode) loadDevice(initialUserCode);
     }
   }, [isAuthenticated, initialUserCode, loadHomes, loadDevice]);
+
+  const reset = () => {
+    setOutcome("");
+    setDevice(null);
+    setUserCode("");
+    setError("");
+    setMessage("");
+  };
 
   const handleLookup = (event) => {
     event.preventDefault();
@@ -294,236 +311,266 @@ const LinkPage = ({ location }) => {
     } catch (err) {
       console.error("denyDeviceCode failed", err);
       setError(
-        t("link.denyFailed", { defaultValue: "Could not deny the device." })
+        t("link.denyFailed", { defaultValue: "Could not deny the edge." })
       );
     } finally {
       setSubmitting(false);
     }
   };
 
-  const title = t("link.title", { defaultValue: "Link an edge box" });
+    const T = (key, defaultValue, opts) => t(key, { defaultValue, ...(opts || {}) });
+  const title = T("link.title", "Link an edge");
+  const pending = device && device.status === "pending";
+  const chosen = homes.find((h) => h.smartHomeId === selectedHome);
+
+  const stepCls = (n) =>
+    "lk-step" +
+    (n === 1 && device ? " lk-step--done" : "") +
+    (n === 2 && pending ? " lk-step--done" : "") +
+    (n === 3 && !pending ? " lk-step--off" : "");
 
   return (
-    <Layout>
-      <main className="dhc-main">
-        <section className="dhc-section">
-          <h1 className="dhc-page-title">{title}</h1>
-          <p className="dhc-page-subtitle">
-            {t("link.subtitle", {
-              defaultValue:
-                "Approve a DigitalHome edge box shown on your device's screen and link it to one of your homes.",
-            })}
+    <OverviewShell active="link" title={title}>
+      <div className="ov-page">
+        <div className="ov-page-head">
+          <h1 className="ov-page-title">{title}</h1>
+          <p className="ov-page-sub">
+            {T(
+              "link.subtitle",
+              "An edge (the home's box, or an app on a computer) shows a pairing code. Approve it here and the edge is linked to your account and, if you choose, to one of your homes. No password is typed on the edge."
+            )}
           </p>
+        </div>
 
-          {(isLoading || !isAuthenticated) && (
-            <p>{t("link.loading", { defaultValue: "Loading…" })}</p>
-          )}
+        {(isLoading || !isAuthenticated) && (
+          <p className="ov-page-sub">{T("link.loading", "Loading…")}</p>
+        )}
 
-          {isAuthenticated && (
-            <>
-              {error && <p className="dhc-error">{error}</p>}
-              {message && <p className="dhc-message">{message}</p>}
-
+        {isAuthenticated && outcome && (
+          <div className={"lk-done" + (outcome === "denied" ? " lk-done--denied" : "")}>
+            <h2>
+              {outcome === "approved"
+                ? T("link.approvedTitle", "Approved")
+                : T("link.deniedTitle", "Denied")}
+            </h2>
+            <p>
+              {outcome === "approved"
+                ? T(
+                    "link.approved",
+                    "The edge finishes linking within a few seconds: its page shows the connection as linked."
+                  )
+                : T(
+                    "link.denied",
+                    "The edge shows that the pairing was denied. To try again, start a new pairing on the edge."
+                  )}
+            </p>
+            <div className="lk-actions">
               {outcome === "approved" && (
-                <p className="dhc-message">
-                  {t("link.approved", {
-                    defaultValue:
-                      "Approved. Your box will finish linking within a few seconds — its screen will switch to the linked state.",
+                <Link className="ov-btn ov-btn--primary" to="/fleet">
+                  {T("link.toFleet", "See it in Fleet")}
+                </Link>
+              )}
+              <button type="button" className="ov-btn ov-btn--ghost" onClick={reset}>
+                {T("link.another", "Link another edge")}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {isAuthenticated && !outcome && (
+          <div className="lk-steps">
+            {/* 1 — the code */}
+            <section className={stepCls(1)}>
+              <div className="lk-step-head">
+                <span className="lk-num">1</span>
+                <span className="lk-step-title">{T("link.step.code", "Pairing code")}</span>
+              </div>
+              <p className="lk-step-hint">
+                {T(
+                  "link.codeHint",
+                  "The edge shows it under Connections after “Add connection”. A link from the edge fills it in; it is valid for 10 minutes."
+                )}
+              </p>
+              <form className="lk-row" onSubmit={handleLookup}>
+                <input
+                  className="ov-input lk-code"
+                  type="text"
+                  value={userCode}
+                  onChange={(e) => setUserCode(e.target.value.toUpperCase())}
+                  placeholder="ABCD-1234"
+                  aria-label={T("link.step.code", "Pairing code")}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <button
+                  type="submit"
+                  className="ov-btn ov-btn--ghost"
+                  disabled={loadingDevice || !userCode.trim()}
+                >
+                  {loadingDevice ? T("link.checking", "Checking…") : T("link.check", "Check code")}
+                </button>
+              </form>
+              {error && !device && <p className="ov-err">{error}</p>}
+            </section>
+
+            {/* 2 — the edge */}
+            <section className={stepCls(2)}>
+              <div className="lk-step-head">
+                <span className="lk-num">2</span>
+                <span className="lk-step-title">{T("link.deviceHeading", "Is this your edge?")}</span>
+                {device && device.status && (
+                  <span className="ov-pill">{T(`link.status.${device.status}`, device.status)}</span>
+                )}
+              </div>
+              {device ? (
+                <dl className="lk-facts">
+                  <dt>{T("link.hostname", "Computer")}</dt>
+                  <dd>{device.hostname || "—"}</dd>
+                  <dt>{T("link.lanIp", "Address on its network")}</dt>
+                  <dd>{device.lan_ip || "—"}</dd>
+                  <dt>{T("link.dheVersion", "Software")}</dt>
+                  <dd>{device.dhe_version || "—"}</dd>
+                </dl>
+              ) : (
+                <p className="lk-step-hint">
+                  {T("link.deviceWait", "Check a code to see which edge asks to be linked.")}
+                </p>
+              )}
+              {device && !pending && (
+                <p className="ov-err">
+                  {T("link.alreadyResolved", "This code was already {{status}}. Start a new pairing on the edge.", {
+                    status: T(`link.status.${device.status}`, device.status),
                   })}
                 </p>
               )}
-              {outcome === "denied" && (
-                <p className="dhc-message">
-                  {t("link.denied", {
-                    defaultValue:
-                      "Device denied. The box will show a denied message and must be restarted to try again.",
-                  })}
-                </p>
+            </section>
+
+            {/* 3 — the home, then approve */}
+            <section className={stepCls(3)}>
+              <div className="lk-step-head">
+                <span className="lk-num">3</span>
+                <span className="lk-step-title">{T("link.step.home", "Home")}</span>
+              </div>
+              <p className="lk-step-hint">
+                {T(
+                  "link.homeHint",
+                  "The edge works for this home. Without one, the edge is only registered to you; give it a home later in Fleet."
+                )}
+              </p>
+              <div className="lk-homes" role="radiogroup">
+                {homes.map((h) => (
+                  <button
+                    key={h.smartHomeId}
+                    type="button"
+                    role="radio"
+                    aria-checked={selectedHome === h.smartHomeId}
+                    className={"ov-pick lk-home" + (selectedHome === h.smartHomeId ? " ov-pick--active" : "")}
+                    onClick={() => setSelectedHome(h.smartHomeId)}
+                    disabled={!pending || showCreate}
+                  >
+                    <span>
+                      <b>{h.smartHomeId}</b>
+                      <small>
+                        {[h.addressLine1, h.city].filter(Boolean).join(", ") || " "}
+                        {h.isDemo ? " · demo" : ""}
+                      </small>
+                    </span>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={selectedHome === ""}
+                  className={"ov-pick lk-home lk-home--none" + (selectedHome === "" ? " ov-pick--active" : "")}
+                  onClick={() => setSelectedHome("")}
+                  disabled={!pending || showCreate}
+                >
+                  <span>
+                    <b>{T("link.noHome", "No home yet")}</b>
+                    <small>{T("link.linkLater", "register only, link later")}</small>
+                  </span>
+                </button>
+              </div>
+              {loadingHomes && <p className="lk-step-hint">{T("link.loadingHomes", "Loading your homes…")}</p>}
+
+              {pending && (
+                <button
+                  type="button"
+                  className="ov-btn ov-btn--ghost"
+                  onClick={() => setShowCreate((v) => !v)}
+                >
+                  {showCreate ? T("link.cancelCreate", "Cancel") : T("link.createHome", "+ New home")}
+                </button>
               )}
 
-              {!outcome && (
-                <form className="dhc-profile-form" onSubmit={handleLookup}>
-                  {/* Pairing code */}
-                  <div className="dhc-form-row">
-                    <label>
-                      {t("link.userCode", { defaultValue: "Pairing code" })}
-                      <input
-                        type="text"
-                        value={userCode}
-                        onChange={(e) =>
-                          setUserCode(e.target.value.toUpperCase())
-                        }
-                        placeholder="ABCD-1234"
-                        autoComplete="off"
-                      />
-                    </label>
-                    <button
-                      type="submit"
-                      className="dhc-button-base dhc-button-secondary"
-                      disabled={loadingDevice || !userCode.trim()}
-                    >
-                      {loadingDevice
-                        ? t("link.checking", { defaultValue: "Checking…" })
-                        : t("link.check", { defaultValue: "Check code" })}
-                    </button>
+              {pending && showCreate && (
+                <form onSubmit={handleCreateHome}>
+                  <div className="lk-create" style={{ marginTop: "0.75rem" }}>
+                    {[
+                      ["country", "Country (2 letters)", "FR"],
+                      ["postalCode", "Postal code", "31000"],
+                      ["streetCode", "Street (3 letters)", "MAR"],
+                      ["houseNumber", "House number", "12"],
+                      ["suffix", "Suffix", "01"],
+                      ["city", "City", "Toulouse"],
+                      ["addressLine1", "Address", "12 rue Martin"],
+                    ].map(([field, label, ph]) => (
+                      <label key={field}>
+                        {T(`link.create.${field}`, label)}
+                        <input
+                          className="ov-input"
+                          type="text"
+                          value={createForm[field]}
+                          onChange={handleCreateChange(field)}
+                          placeholder={ph}
+                          required={field !== "addressLine1"}
+                        />
+                      </label>
+                    ))}
                   </div>
-
-                  {/* device_info sanity-check card */}
-                  {device && (
-                    <div className="dhc-form-row">
-                      <p>
-                        <strong>
-                          {t("link.deviceHeading", {
-                            defaultValue: "Is this your box?",
-                          })}
-                        </strong>
-                      </p>
-                      <ul>
-                        <li>
-                          {t("link.hostname", { defaultValue: "Hostname" })}:{" "}
-                          {device.hostname || "—"}
-                        </li>
-                        <li>
-                          {t("link.lanIp", { defaultValue: "LAN IP" })}:{" "}
-                          {device.lan_ip || "—"}
-                        </li>
-                        <li>
-                          {t("link.dheVersion", {
-                            defaultValue: "Edge version",
-                          })}
-                          : {device.dhe_version || "—"}
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Home selection */}
-                  {device && device.status === "pending" && (
-                    <>
-                      <div className="dhc-form-row">
-                        <label>
-                          {t("link.home", {
-                            defaultValue: "Link to home (optional)",
-                          })}
-                          <select
-                            value={selectedHome}
-                            onChange={(e) => setSelectedHome(e.target.value)}
-                            disabled={loadingHomes || showCreate}
-                          >
-                            <option value="">
-                              {t("link.linkLater", {
-                                defaultValue: "— register only, link later —",
-                              })}
-                            </option>
-                            {homes.map((h) => (
-                              <option key={h.smartHomeId} value={h.smartHomeId}>
-                                {h.smartHomeId}
-                                {h.city ? ` — ${h.city}` : ""}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <button
-                          type="button"
-                          className="dhc-button-base dhc-button-ghost"
-                          onClick={() => setShowCreate((v) => !v)}
-                        >
-                          {showCreate
-                            ? t("link.cancelCreate", { defaultValue: "Cancel" })
-                            : t("link.createHome", {
-                                defaultValue: "Create a new home",
-                              })}
-                        </button>
-                      </div>
-
-                      {/* Inline create-new home (reuses initiateDigitalHome) */}
-                      {showCreate && (
-                        <div className="dhc-form-row">
-                          {[
-                            ["country", "Country (2-letter)", "DE"],
-                            ["postalCode", "Postal code", "80331"],
-                            ["streetCode", "Street code (3 letters)", "MAR"],
-                            ["houseNumber", "House number", "12"],
-                            ["suffix", "Suffix", "01"],
-                            ["city", "City", "München"],
-                            ["addressLine1", "Address line", "Marienplatz 12"],
-                          ].map(([field, label, ph]) => (
-                            <label key={field}>
-                              {t(`link.create.${field}`, {
-                                defaultValue: label,
-                              })}
-                              <input
-                                type="text"
-                                value={createForm[field]}
-                                onChange={handleCreateChange(field)}
-                                placeholder={ph}
-                              />
-                            </label>
-                          ))}
-                          <button
-                            type="button"
-                            className="dhc-button-base dhc-button-secondary"
-                            onClick={handleCreateHome}
-                            disabled={creating}
-                          >
-                            {creating
-                              ? t("link.creating", {
-                                  defaultValue: "Creating…",
-                                })
-                              : t("link.doCreate", {
-                                  defaultValue: "Create home",
-                                })}
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Approve / Deny */}
-                      <div className="dhc-profile-actions">
-                        <button
-                          type="button"
-                          className="dhc-button-base dhc-button-primary"
-                          onClick={handleApprove}
-                          disabled={submitting}
-                        >
-                          {submitting
-                            ? t("link.approving", {
-                                defaultValue: "Approving…",
-                              })
-                            : selectedHome
-                            ? t("link.approve", {
-                                defaultValue: "Approve & link",
-                              })
-                            : t("link.approveRegister", {
-                                defaultValue: "Approve (register only)",
-                              })}
-                        </button>
-                        <button
-                          type="button"
-                          className="dhc-button-base dhc-button-danger"
-                          onClick={handleDeny}
-                          disabled={submitting}
-                        >
-                          {t("link.deny", { defaultValue: "Deny" })}
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  {device && device.status && device.status !== "pending" && (
-                    <p className="dhc-message">
-                      {t("link.alreadyResolved", {
-                        defaultValue: "This code was already {{status}}.",
-                        status: device.status,
-                      })}
-                    </p>
-                  )}
+                  <button type="submit" className="ov-btn ov-btn--ghost" disabled={creating}>
+                    {creating ? T("link.creating", "Creating…") : T("link.doCreate", "Create home")}
+                  </button>
                 </form>
               )}
-            </>
+
+              {message && <p className="ov-msg">{message}</p>}
+              {error && device && <p className="ov-err">{error}</p>}
+
+              <div className="lk-actions" style={{ marginTop: "1rem" }}>
+                <button
+                  type="button"
+                  className="ov-btn ov-btn--primary"
+                  onClick={handleApprove}
+                  disabled={!pending || submitting || showCreate}
+                >
+                  {submitting
+                    ? T("link.approving", "Approving…")
+                    : chosen
+                    ? T("link.approveTo", "Approve and link to {{id}}", { id: chosen.smartHomeId })
+                    : T("link.approveRegister", "Approve (register only)")}
+                </button>
+                <button
+                  type="button"
+                  className="ov-btn ov-btn--danger"
+                  onClick={handleDeny}
+                  disabled={!pending || submitting}
+                >
+                  {T("link.deny", "Deny")}
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
+
+        <p className="lk-note">
+          {T(
+            "link.note",
+            "An edge that is linked can be unlinked on the edge itself (Connections → unlink); the cloud keeps its data."
           )}
-        </section>
-      </main>
-    </Layout>
+        </p>
+      </div>
+    </OverviewShell>
   );
 };
 
