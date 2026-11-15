@@ -817,3 +817,27 @@
   color: #6fd48a;
   font-weight: 700;
 }
+
+/* ── sign in: the Amplify Authenticator in the shell's tokens ── */
+.ov-auth {
+  max-width: 440px;
+}
+.ov-auth [data-amplify-authenticator] {
+  display: block;
+}
+.ov-auth [data-amplify-authenticator] [data-amplify-container] {
+  width: 100%;
+  place-self: start;
+}
+.ov-auth [data-amplify-router] {
+  border-radius: 12px;
+  overflow: hidden;
+}
+.ov-auth .amplify-input,
+.ov-auth .amplify-field-group__outer-end .amplify-button {
+  background: #0d0f0e;
+}
+.ov-auth-done {
+  font-size: 12.5px;
+  color: var(--ov-muted);
+}
