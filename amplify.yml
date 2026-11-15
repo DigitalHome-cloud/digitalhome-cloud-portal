@@ -4,11 +4,25 @@ frontend:
     preBuild:
       commands:
         - echo "Node version:" && node -v
-        - echo "NPM version:" && npm -v
-        # Install Amplify CLI (or use a pinned version)
-        - npm install -g @aws-amplify/cli
-        # Install dependencies
         - npm ci || npm install
+        # Backend configuration for THIS branch: main -> the prod backend,
+        # stage -> the stage backend, read from the core app's deployed stack
+        # (as the Designer does). Set on the portal's Amplify app:
+        #   AMPLIFY_BACKEND_APP_ID      the core app (digitalhome-cloud-core)
+        #   AMPLIFY_BACKEND_APP_BRANCH  per branch: main on main, stage on stage
+        # and a service role that may read that stack. Without them the
+        # committed src/amplify_outputs.json is used, which is stage's, so a
+        # prod build must never run without them.
+        - |
+          if [ -n "$AMPLIFY_BACKEND_APP_ID" ] && [ -n "$AMPLIFY_BACKEND_APP_BRANCH" ]; then
+            echo "backend: $AMPLIFY_BACKEND_APP_BRANCH"
+            npx -y -p @aws-amplify/backend-cli@1 ampx generate outputs --branch "$AMPLIFY_BACKEND_APP_BRANCH" --app-id "$AMPLIFY_BACKEND_APP_ID" --out-dir ./src
+          elif [ "$AWS_BRANCH" = "main" ]; then
+            echo "main needs AMPLIFY_BACKEND_APP_ID and AMPLIFY_BACKEND_APP_BRANCH; refusing to build prod against stage" >&2
+            exit 1
+          else
+            echo "backend: the committed src/amplify_outputs.json"
+          fi
     build:
       commands:
         - npm run build
