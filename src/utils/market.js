@@ -36,7 +36,6 @@ const Q = {
   addSellerEditor: `mutation AddSellerEditor($seller: String!, $email: String!) { addSellerEditor(seller: $seller, email: $email) }`,
   removeSellerEditor: `mutation RemoveSellerEditor($seller: String!, $email: String!) {
     removeSellerEditor(seller: $seller, email: $email) }`,
-  importDeviceCatalogue: `mutation ImportDeviceCatalogue { importDeviceCatalogue }`,
 };
 
 const gql = async (query, variables) => (await generateClient().graphql({ query, variables })).data;
@@ -249,4 +248,3 @@ export const createSeller = async (id, name, kind) => (await gql(Q.createSeller,
 export const sellerEditors = async (seller) => (await gql(Q.sellerEditors, { seller })).sellerEditors || [];
 export const addSellerEditor = (seller, email) => gql(Q.addSellerEditor, { seller, email });
 export const removeSellerEditor = (seller, email) => gql(Q.removeSellerEditor, { seller, email });
-export const importDeviceCatalogue = async () => fromJson((await gql(Q.importDeviceCatalogue)).importDeviceCatalogue);

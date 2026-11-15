@@ -5,7 +5,6 @@ import {
   sellerEditors,
   addSellerEditor,
   removeSellerEditor,
-  importDeviceCatalogue,
   PLATFORM_SELLER,
 } from "../utils/market";
 
@@ -17,15 +16,16 @@ const errText = (err) =>
 /**
  * dhc-admins: the marketplace's sellers. Create one (id, name, kind), name its
  * editors by e-mail (they join group market-<id> and need an authenticator
- * app to edit), and once per environment bring the old Catalog (DeviceModel)
- * in as seller digitalhome-cloud. Every call needs the admin's TOTP session;
+ * app to edit). The platform's own curated catalogue is the seller
+ * digitalhome-cloud (kind platform). Every call needs the admin's TOTP session;
  * the market Lambda checks it.
  */
 const SellersAdmin = ({ sellers, onChanged }) => {
   const { t } = useTranslation();
-  const [id, setId] = useState("");
+  // With no seller yet, offer the platform's own catalogue first.
+  const [id, setId] = useState(sellers.length ? "" : PLATFORM_SELLER);
   const [name, setName] = useState("");
-  const [kind, setKind] = useState("manufacturer");
+  const [kind, setKind] = useState(sellers.length ? "manufacturer" : "platform");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
   const [err, setErr] = useState(null);
@@ -74,19 +74,6 @@ const SellersAdmin = ({ sellers, onChanged }) => {
       setEmail("");
     });
 
-  const importOld = () =>
-    run(async () => {
-      const r = await importDeviceCatalogue();
-      setMsg(
-        t("market.imported", {
-          added: r.added ?? 0,
-          files: r.files ?? 0,
-          defaultValue: `Old catalogue imported: ${r.added ?? 0} articles, ${r.files ?? 0} files.`,
-        }) + (r.notes?.length ? ` ${r.notes.join("; ")}` : "")
-      );
-      await onChanged();
-    });
-
   const idOk = ID_RE.test(id.trim());
 
   return (
@@ -95,17 +82,6 @@ const SellersAdmin = ({ sellers, onChanged }) => {
         <h3 className="ov-form-title">
           {t("market.sellersTitle", { defaultValue: "Marketplace sellers" })}
         </h3>
-        <button
-          type="button"
-          className="ov-btn ov-btn--ghost"
-          disabled={busy}
-          onClick={importOld}
-          title={t("market.importHint", {
-            defaultValue: `The old Catalog becomes seller ${PLATFORM_SELLER}; articles already there are kept.`,
-          })}
-        >
-          {t("market.import", { defaultValue: "Import the old catalogue" })}
-        </button>
       </div>
 
       <div className="ov-tablewrap">

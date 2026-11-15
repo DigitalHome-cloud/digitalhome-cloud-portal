@@ -227,76 +227,11 @@ export const listUserProfiles = /* GraphQL */ `
 `;
 
 // ─── Device Inventory ──────────────────────────────────────────────────────
-export const getDeviceModel = /* GraphQL */ `
-  query GetDeviceModel($modelNumber: ID!) {
-    getDeviceModel(modelNumber: $modelNumber) {
-      brand
-      category
-      compatibleClasses
-      createdAt
-      currentA
-      description
-      deviceType
-      hasActorCapability
-      hasControllerCapability
-      hasIOTCapability
-      hasSensorCapability
-      modelNumber
-      powerSource
-      powerW
-      region
-      s3DocPath
-      s3ImgPath
-      s3SpecsPath
-      standards
-      thumbnail
-      updatedAt
-      voltageV
-      __typename
-    }
-  }
-`;
-export const listDeviceModels = /* GraphQL */ `
-  query ListDeviceModels(
-    $filter: ModelDeviceModelFilterInput
-    $limit: Int
-    $nextToken: String
-  ) {
-    listDeviceModels(filter: $filter, limit: $limit, nextToken: $nextToken) {
-      items {
-        brand
-        category
-        compatibleClasses
-        createdAt
-        currentA
-        description
-        deviceType
-        hasActorCapability
-        hasControllerCapability
-        hasIOTCapability
-        hasSensorCapability
-        modelNumber
-        powerSource
-        powerW
-        region
-        s3DocPath
-        s3ImgPath
-        s3SpecsPath
-        standards
-        thumbnail
-        updatedAt
-        voltageV
-        __typename
-      }
-      nextToken
-      __typename
-    }
-  }
-`;
 export const getDeviceInstance = /* GraphQL */ `
   query GetDeviceInstance($id: ID!) {
     getDeviceInstance(id: $id) {
       createdAt
+      article
       deviceType
       firmwareVersion
       id
@@ -327,6 +262,7 @@ export const listDeviceInstances = /* GraphQL */ `
     ) {
       items {
         createdAt
+        article
         deviceType
         firmwareVersion
         id
@@ -364,6 +300,7 @@ export const listDeviceInstanceBySmartHomeId = /* GraphQL */ `
     ) {
       items {
         createdAt
+        article
         deviceType
         firmwareVersion
         id
