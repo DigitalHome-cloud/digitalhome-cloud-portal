@@ -81,11 +81,10 @@ export const SmartHomeProvider = ({ children }) => {
   // Read the persisted selection once; adopt it unless ?home= overrode this load.
   useEffect(() => {
     if (!isAuthenticated || !isBrowser || initializedRef.current) return;
-    const owner = user?.username;
-    if (!owner) return;
+    if (!user?.userId && !user?.username) return;
     initializedRef.current = true;
     (async () => {
-      const profile = await fetchProfileActiveHome(owner);
+      const profile = await fetchProfileActiveHome(user);
       if (!profile) return;
       setProfileId(profile.profileId);
       if (!urlHomeRef.current && profile.activeSmartHomeId) {
