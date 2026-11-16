@@ -12,7 +12,13 @@ import {
 // adminMfaGate trigger (repos/core) withholds the admin group from their
 // tokens. Once on, every DHC app asks for the code at sign-in.
 
-const ISSUER = "DigitalHome.Cloud";
+// The name the authenticator app shows. Stage and prod are separate accounts
+// with separate secrets, so a stage entry says so: two entries with the same
+// name, one of which never works on prod, is how a code gets "lost".
+const issuer = () =>
+  typeof window !== "undefined" && /^(stage[-.]|localhost|127\.)/.test(window.location.hostname)
+    ? "DigitalHome.Cloud (stage)"
+    : "DigitalHome.Cloud";
 const muted = { color: "var(--ov-muted)" };
 const mono = { fontFamily: "'IBM Plex Mono', monospace", fontSize: "0.78rem" };
 
@@ -46,7 +52,7 @@ const TwoStepSignIn = ({ email, reloadSession, style }) => {
     setMessage("");
     try {
       const details = await setUpTOTP();
-      const uri = details.getSetupUri(ISSUER, email || undefined).toString();
+      const uri = details.getSetupUri(issuer(), email || undefined).toString();
       setSetupUri(uri);
       setSecret(details.sharedSecret);
       try {
@@ -112,6 +118,7 @@ const TwoStepSignIn = ({ email, reloadSession, style }) => {
       <h3 style={{ marginTop: 0, fontSize: "0.95rem" }}>Two-step sign-in</h3>
       <p style={{ ...muted, fontSize: "0.78rem", margin: "0 0 0.8rem" }}>
         A code from an authenticator app (Aegis, Google Authenticator, 1Password …) at each sign-in.
+        The app lists it as “{issuer()}”.
         Required for administrators: without it, admin rights are withheld.
       </p>
       {error && <p className="ov-err">{error}</p>}
