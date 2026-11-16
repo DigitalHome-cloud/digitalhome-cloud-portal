@@ -33,6 +33,18 @@ export async function homeIdOf(smartHomeId) {
   return "";
 }
 
+/** The SmartHome ID of a homeId, or "" (only homes the user may list). */
+export async function smartHomeIdOf(homeId) {
+  let nextToken = null;
+  do {
+    const d = await call(HOME_IDS, { nextToken });
+    const hit = (d.listDigitalHomes.items || []).find((h) => h.homeId === homeId);
+    if (hit) return hit.smartHomeId || "";
+    nextToken = d.listDigitalHomes.nextToken;
+  } while (nextToken);
+  return "";
+}
+
 const OVERVIEW = /* GraphQL */ `
   query HomeConfigurations($homeId: String!) {
     homeConfigurations(homeId: $homeId) {
