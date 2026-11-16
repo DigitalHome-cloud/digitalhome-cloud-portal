@@ -8,6 +8,7 @@ import { useTier } from "../utils/useTier";
 import { generateClient } from "aws-amplify/api";
 import { fetchUserAttributes, updateUserAttributes } from "aws-amplify/auth";
 import { listUserProfiles } from "../graphql/queries";
+import { findOwnProfile } from "../utils/activeHome";
 import {
   createUserProfile,
   updateUserProfile,
@@ -106,14 +107,8 @@ const UserProfilePage = () => {
   // App profile (DDB UserProfile)
   React.useEffect(() => {
     if (!isAuthenticated || !user) return;
-    client
-      .graphql({
-        query: listUserProfiles,
-        variables: { filter: { owner: { eq: user.username } }, limit: 1 },
-        authMode: "userPool",
-      })
-      .then((r) => {
-        const p = r?.data?.listUserProfiles?.items?.[0] || null;
+    findOwnProfile(client, listUserProfiles, user)
+      .then((p) => {
         setProfile(p);
         setMarketingOptIn(!!p?.marketingOptIn);
       })
