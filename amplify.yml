@@ -5,10 +5,19 @@ frontend:
       commands:
         - echo "Node version:" && node -v
         - echo "NPM version:" && npm -v
-        # Install Amplify CLI (or use a pinned version)
-        - npm install -g @aws-amplify/cli
         # Install dependencies
-        - npm ci || npm install
+        - npm ci
+        # This branch's backend (core): the committed src/amplify_outputs.json
+        # names one backend; each branch replaces it with its own, so stage
+        # talks to core stage and main to core main. AMPLIFY_BACKEND_APP_ID is
+        # set on this Amplify app; the backend branch is this branch's own name
+        # (AWS_BRANCH) unless AMPLIFY_BACKEND_APP_BRANCH says otherwise.
+        - export BACKEND_BRANCH="${AMPLIFY_BACKEND_APP_BRANCH:-$AWS_BRANCH}"
+        - echo "Backend $AMPLIFY_BACKEND_APP_ID / $BACKEND_BRANCH"
+        - test -n "$AMPLIFY_BACKEND_APP_ID" && test -n "$BACKEND_BRANCH"
+        # pinned to core's version; only this step uses it, not the site
+        - npx --yes @aws-amplify/backend-cli@1.8.2 generate outputs --branch "$BACKEND_BRANCH" --app-id "$AMPLIFY_BACKEND_APP_ID" --out-dir ./src
+        - node -e "const o=require('./src/amplify_outputs.json'); console.log('pool', o.auth.user_pool_id, 'api', o.data.url)"
     build:
       commands:
         - npm run build
