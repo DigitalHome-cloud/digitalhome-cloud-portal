@@ -17,11 +17,14 @@ DigitalHome.Cloud Portal — a Gatsby 5 / React 18 web app serving as the launch
 
 ## Local Dev Setup
 
-This app is a **frontend-only consumer**. The Amplify Gen 2 backend lives in the `repos/core` submodule (`digitalhome-cloud-darkfactory/repos/core/amplify/`). The connection details (Cognito + AppSync + S3 IDs) are committed to this repo as `src/amplify_outputs.json` and imported in `gatsby-browser.js` / `gatsby-ssr.js`.
+This app is a **frontend-only consumer**. The Amplify Gen 2 backend lives in the `repos/core` submodule (`digitalhome-cloud-darkfactory/repos/core/amplify/`). The connection details (Cognito + AppSync + S3 IDs) are in `src/amplify_outputs.json`, imported in `gatsby-browser.js` / `gatsby-ssr.js`. It is **generated, not committed** (gitignored): each Amplify Hosting build writes the outputs of its own branch's core backend in `preBuild` (stage → core stage, main → core main; see `amplify.yml`).
 
-After a backend change, copy the regenerated outputs into this repo (in CI the build does this via `npx ampx generate outputs`):
+Locally, write it once (and again after a backend change), for the stage backend or your own sandbox:
 
 ```bash
+# the deployed stage backend (the core app id is AMPLIFY_BACKEND_APP_ID on this Amplify app)
+npx --yes @aws-amplify/backend-cli@1.8.2 generate outputs --branch stage --app-id <core app id> --out-dir src
+# or your personal sandbox's
 cp ~/digitalhomeCloud/digitalhome-cloud-darkfactory/repos/core/amplify_outputs.json src/
 ```
 
@@ -29,7 +32,7 @@ Then `yarn develop` (port 8000). For backend authoring see the umbrella's `dhc-a
 
 `.env.development` (gitignored) is reserved for cross-app URL overrides only (`GATSBY_DESIGNER_URL`, etc.) — backend connection no longer flows through env vars.
 
-**Files that must never be committed:** `.env.development`, `.amplify/`. (Note: `src/amplify_outputs.json` IS committed — it holds public IDs.)
+**Files that must never be committed:** `.env.development`, `.amplify/`, `src/amplify_outputs.json` (generated per branch).
 
 ## Architecture
 
@@ -130,7 +133,7 @@ The DigitalHome.Cloud platform spans multiple repos sharing one Amplify Gen 2 ba
 
 The semantic-core ontology files (TTL, JSON-LD context, SHACL shapes) live in the `core` repo under `schema/`.
 
-**The `repos/core` submodule owns the `amplify/` directory** (the platform's Gen 2 backend). Each app commits its own `src/amplify_outputs.json` (the deploy-stack public IDs). All apps that point at the same stack consume one Cognito User Pool, AppSync API, and S3 bucket.
+**The `repos/core` submodule owns the `amplify/` directory** (the platform's Gen 2 backend). This app generates its `src/amplify_outputs.json` at build time from its branch's backend. All apps that point at the same stack consume one Cognito User Pool, AppSync API, and S3 bucket.
 
 Cross-app navigation uses env-var-driven URLs: `GATSBY_DESIGNER_URL` defaults to `https://designer.digitalhome.cloud` in production, overridden to `http://localhost:8001` in `.env.development`. The SmartHome ID is passed via `?home=` query parameter.
 

@@ -70,8 +70,9 @@ yarn-error.log
 
 # Amplify Gen 2 — local sandbox state, never commit
 .amplify/
-# (amplify_outputs.json IS committed — it holds the public Cognito/AppSync IDs
-# that the frontend needs to talk to the deployed backend.)
+# Generated from the backend: each Amplify build writes its own branch's
+# (amplify.yml, preBuild); locally, see CLAUDE.md → Local Dev Setup.
+src/amplify_outputs.json
 
 # Legacy Gen 1 leftovers (kept ignored just in case any old branch still
 # references these paths)
