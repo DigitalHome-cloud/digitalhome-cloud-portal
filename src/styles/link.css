@@ -1,0 +1,168 @@
+/* /link — approving an edge, inside the Overview rail shell. Uses the shell's
+   tokens (--ov-*) and its buttons, inputs and pills; only the step layout is here. */
+
+.lk-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.lk-step {
+  border: 1px solid var(--ov-line-2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1rem 1.15rem 1.1rem;
+}
+.lk-step--off {
+  opacity: 0.45;
+}
+.lk-step-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+.lk-num {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--ov-line-2);
+  font: 600 11px "IBM Plex Mono", monospace;
+  color: var(--ov-muted);
+  flex: none;
+}
+.lk-step--done .lk-num {
+  background: var(--ov-green);
+  border-color: var(--ov-green);
+  color: var(--ov-rail);
+}
+.lk-step-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+.lk-step-hint {
+  color: var(--ov-muted);
+  font-size: 0.8rem;
+  margin: -0.35rem 0 0.75rem;
+}
+
+.lk-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.lk-code.ov-input {
+  width: 9.5em;
+  font: 600 1.25rem "IBM Plex Mono", monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  max-width: 100%;
+  padding: 8px 12px;
+}
+
+.lk-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1.2rem;
+  font-size: 0.85rem;
+  margin: 0;
+}
+.lk-facts dt {
+  color: var(--ov-muted);
+}
+.lk-facts dd {
+  margin: 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.lk-homes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.lk-home {
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  min-width: 11rem;
+}
+.lk-home small {
+  display: block;
+  color: var(--ov-muted);
+  font-size: 0.72rem;
+  margin-top: 2px;
+}
+.lk-home b {
+  font: 600 0.8rem "IBM Plex Mono", monospace;
+}
+.lk-home--none b {
+  font: 600 0.82rem "IBM Plex Sans", sans-serif;
+}
+
+.lk-create {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.6rem;
+  margin: 0.25rem 0 0.75rem;
+}
+.lk-create label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: var(--ov-muted);
+}
+.lk-create .ov-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.lk-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 0.2rem;
+}
+
+.lk-done {
+  border: 1px solid rgba(111, 174, 126, 0.45);
+  background: rgba(111, 174, 126, 0.08);
+  border-radius: 12px;
+  padding: 1.1rem 1.2rem;
+}
+.lk-done--denied {
+  border-color: rgba(224, 102, 102, 0.4);
+  background: rgba(224, 102, 102, 0.06);
+}
+.lk-done h2 {
+  font-size: 1rem;
+  margin: 0 0 0.4rem;
+}
+.lk-done p {
+  color: var(--ov-muted);
+  font-size: 0.85rem;
+  margin: 0 0 0.8rem;
+}
+
+.lk-note {
+  color: var(--ov-muted);
+  font-size: 0.8rem;
+  margin-top: 1.2rem;
+}
+
+@media (max-width: 600px) {
+  .lk-home {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+}

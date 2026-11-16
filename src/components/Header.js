@@ -7,7 +7,7 @@ import { useSmartHome } from "../context/SmartHomeContext";
 const Header = () => {
   const { t } = useTranslation();
   const { languages, language, changeLanguage } = useI18next();
-  const { authState, isAuthenticated, user, signOut } = useAuth();
+  const { authState, isAuthenticated, user, signOut, hasGroup } = useAuth();
   const { smartHomes, demoHomes, userHomes, activeHome, setActiveHome } =
     useSmartHome();
 
@@ -20,7 +20,7 @@ const Header = () => {
     <header className="dhc-header">
       <div className="dhc-header-inner">
         <div className="dhc-logo">
-          <span className="dhc-logo-mark">DH</span>
+          <span className="dhc-logo-mark">DH.C</span>
           <div className="dhc-logo-text">
             <span className="dhc-logo-title">DigitalHome.Cloud</span>
             <span className="dhc-logo-subtitle">Portal</span>
@@ -35,6 +35,27 @@ const Header = () => {
             <Link to="/about" className="dhc-nav-link">
               {t("nav.about")}
             </Link>
+            {isAuthenticated && (
+              <>
+                <Link to="/fleet" className="dhc-nav-link">
+                  {t("nav.fleet", { defaultValue: "Fleet" })}
+                </Link>
+                <Link to="/inventory" className="dhc-nav-link">
+                  {t("nav.inventory", { defaultValue: "Inventory" })}
+                </Link>
+                <Link to="/areas" className="dhc-nav-link">
+                  {t("nav.areas", { defaultValue: "Areas" })}
+                </Link>
+                <Link to="/operator" className="dhc-nav-link">
+                  {t("nav.operator", { defaultValue: "Operator" })}
+                </Link>
+                {hasGroup && hasGroup("dhc-admins") && (
+                  <Link to="/debug" className="dhc-nav-link">
+                    {t("nav.debug", { defaultValue: "Debug" })}
+                  </Link>
+                )}
+              </>
+            )}
             <a
               href="https://github.com/DigitalHome-cloud"
               target="_blank"
@@ -43,7 +64,7 @@ const Header = () => {
             >
               {t("nav.github")}
             </a>
-         </div>
+          </div>
 
           {/* SmartHome selector */}
           <div className="dhc-home-selector">
@@ -53,13 +74,22 @@ const Header = () => {
               onChange={(e) => setActiveHome(e.target.value)}
               aria-label={t("smarthome.label")}
             >
-              <optgroup label={t("smarthome.demoGroup")}>
-                {demoHomes.map((h) => (
-                  <option key={h.id} value={h.id}>
-                    {h.id}
-                  </option>
-                ))}
-              </optgroup>
+              {activeHome.id === "" && (
+                <option value="">
+                  {userHomes.length === 0
+                    ? t("smarthome.none", { defaultValue: "No homes yet" })
+                    : t("smarthome.pick", { defaultValue: "Select a home…" })}
+                </option>
+              )}
+              {demoHomes.length > 0 && (
+                <optgroup label={t("smarthome.demoGroup")}>
+                  {demoHomes.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.id}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
               {userHomes.length > 0 && (
                 <optgroup label={t("smarthome.yourHomes")}>
                   {userHomes.map((h) => (
