@@ -866,3 +866,36 @@
 .hv-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .hv-name { font-size: 0.8rem; overflow-wrap: anywhere; }
 .hv-meta { font: 0.7rem "IBM Plex Mono"; color: var(--ov-muted); }
+
+.hv-preview { position: fixed; inset: 0; z-index: 50; background: rgba(5, 7, 6, 0.92); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.hv-preview figure { margin: 0; display: flex; flex-direction: column; gap: 0.6rem; max-width: 100%; max-height: 100%; }
+.hv-preview img { max-width: min(1400px, 100%); max-height: calc(100vh - 120px); object-fit: contain; border-radius: 8px; background: #000; }
+.hv-preview figcaption { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; color: var(--ov-text); font-size: 0.85rem; }
+.hv-preview-acts { display: flex; gap: 0.4rem; margin-left: auto; }
+.hv-wait { color: var(--ov-muted); font-size: 2rem; padding: 4rem; }
+
+.hc-legend { display: flex; flex-wrap: wrap; gap: 0.8rem; font-size: 0.8rem; margin: 0.7rem 0 0; }
+.hc-k::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 0.35rem; vertical-align: -1px; background: var(--hc-c); }
+.hc-k--added, .hc-node--added { --hc-c: var(--ov-green); }
+.hc-k--removed, .hc-node--removed { --hc-c: #e08a8a; }
+.hc-k--changed, .hc-node--changed { --hc-c: var(--ov-amber); }
+.hc-k--same, .hc-node--same { --hc-c: var(--ov-dim); }
+.hc-graphwrap { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 0.8rem; }
+.hc-graph { flex: 1 1 560px; min-width: 0; width: 100%; height: auto; background: var(--ov-panel); border: 1px solid var(--ov-line); border-radius: 12px; }
+.hc-link line { stroke: var(--ov-line-2); stroke-width: 1.2; }
+.hc-link--added line { stroke: var(--ov-green); stroke-width: 2; }
+.hc-link--removed line { stroke: #e08a8a; stroke-width: 2; stroke-dasharray: 5 4; }
+.hc-node { cursor: pointer; }
+.hc-node rect { fill: var(--ov-bg); stroke: var(--hc-c); stroke-width: 1.6; }
+.hc-node--removed rect { stroke-dasharray: 4 3; }
+.hc-node--picked rect { stroke-width: 3; }
+.hc-node:focus { outline: none; }
+.hc-node:focus rect { stroke-width: 3; }
+.hc-node text { fill: var(--ov-text); font: 10px "IBM Plex Sans"; text-anchor: middle; }
+.hc-node .hc-node-type { fill: var(--ov-muted); font: 8px "IBM Plex Mono"; }
+.hc-side { flex: 0 1 280px; min-width: 220px; background: var(--ov-panel); border: 1px solid var(--ov-line); border-radius: 12px; padding: 0.8rem; font-size: 0.82rem; }
+.hc-side dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; margin: 0.6rem 0; }
+.hc-side dt { color: var(--ov-muted); font: 0.72rem "IBM Plex Mono"; }
+.hc-side dd { margin: 0; overflow-wrap: anywhere; }
+.hc-json { margin-top: 0.8rem; max-height: 520px; overflow: auto; background: var(--ov-panel); border: 1px solid var(--ov-line); border-radius: 12px; padding: 0.8rem; font: 0.75rem/1.45 "IBM Plex Mono"; color: var(--ov-text); white-space: pre; }
+.hc-json--small { max-height: 260px; font-size: 0.7rem; }

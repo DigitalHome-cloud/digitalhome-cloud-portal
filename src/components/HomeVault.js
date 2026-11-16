@@ -15,6 +15,8 @@ const HomeVault = () => {
   const [items, setItems] = useState(null);
   const [conf, setConf] = useState(null);
   const [error, setError] = useState("");
+  const [urls, setUrls] = useState({}); // sha256 → presigned URL of a photo (inline)
+  const [preview, setPreview] = useState(null); // { list, i }
 
   const load = React.useCallback(async () => {
     if (!home.homeId) return;
@@ -23,14 +25,39 @@ const HomeVault = () => {
       const [its, c] = await Promise.all([vaultItems(home.homeId), configurations(home.homeId).catch(() => null)]);
       setItems(its);
       setConf(c);
+      // photos without a thumbnail show the original itself (presigned, inline)
+      const photos = its.filter((it) => it.kind === "photo" && !it.thumbUrl).slice(0, 60);
+      const got = await Promise.all(photos.map((it) => vaultItemUrl(home.homeId, it.sha256).catch(() => null)));
+      setUrls(Object.fromEntries(photos.map((it, i) => [it.sha256, got[i]?.url]).filter(([, u]) => u)));
     } catch (e) {
       setError(errText(e));
     }
   }, [home.homeId]);
   useEffect(() => {
     setItems(null);
+    setUrls({});
+    setPreview(null);
     load();
   }, [load]);
+
+  // the preview: Escape closes it, the arrows go through the group's photos
+  useEffect(() => {
+    if (!preview) return undefined;
+    const onKey = (e) => {
+      if (e.key === "Escape") setPreview(null);
+      if (e.key === "ArrowRight") setPreview((p) => ({ ...p, i: (p.i + 1) % p.list.length }));
+      if (e.key === "ArrowLeft") setPreview((p) => ({ ...p, i: (p.i - 1 + p.list.length) % p.list.length }));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [preview]);
+  const current = preview ? preview.list[preview.i] : null;
+  useEffect(() => {
+    if (!current || urls[current.sha256]) return;
+    vaultItemUrl(home.homeId, current.sha256)
+      .then((r) => r?.url && setUrls((u) => ({ ...u, [current.sha256]: r.url })))
+      .catch((e) => setError(errText(e)));
+  }, [current, urls, home.homeId]);
 
   if (!home.homeId)
     return (
@@ -92,12 +119,16 @@ const HomeVault = () => {
           <div className="hv-grid">
             {[...groups[g]]
               .sort((a, b) => name(a).localeCompare(name(b)))
-              .map((it) => (
+              .map((it, _, sorted) => (
                 <button
                   type="button"
                   key={it.sha256}
                   className="hv-item"
-                  onClick={() => open(it)}
+                  onClick={() => {
+                    if (it.kind !== "photo") return open(it);
+                    const list = sorted.filter((x) => x.kind === "photo");
+                    return setPreview({ list, i: list.indexOf(it) });
+                  }}
                   title={
                     it.kind === "photo"
                       ? t("homeVault.view", { defaultValue: "View" })
@@ -105,7 +136,7 @@ const HomeVault = () => {
                   }
                 >
                   <span className="hv-thumb">
-                    {it.thumbUrl ? <img src={it.thumbUrl} alt="" loading="lazy" /> : <span>{ICON[it.kind] || ICON.other}</span>}
+                    {it.thumbUrl || urls[it.sha256] ? <img src={it.thumbUrl || urls[it.sha256]} alt="" loading="lazy" /> : <span>{ICON[it.kind] || ICON.other}</span>}
                   </span>
                   <span className="hv-name">{name(it)}</span>
                   <span className="hv-meta">
@@ -116,6 +147,35 @@ const HomeVault = () => {
           </div>
         </section>
       ))}
+      {current && (
+        <div className="hv-preview" role="dialog" aria-modal="true" aria-label={name(current)} onClick={() => setPreview(null)}>
+          <figure onClick={(e) => e.stopPropagation()}>
+            {urls[current.sha256] ? <img src={urls[current.sha256]} alt={name(current)} /> : <span className="hv-wait">…</span>}
+            <figcaption>
+              <span>{name(current)}</span>
+              <span className="hv-meta">
+                {preview.i + 1} / {preview.list.length} · {bytes(current.size)}
+              </span>
+              <span className="hv-preview-acts">
+                {preview.list.length > 1 && (
+                  <>
+                    <button type="button" className="ov-btn ov-btn--ghost" aria-label={t("homeVault.prev", { defaultValue: "Previous" })}
+                      onClick={() => setPreview((p) => ({ ...p, i: (p.i - 1 + p.list.length) % p.list.length }))}>←</button>
+                    <button type="button" className="ov-btn ov-btn--ghost" aria-label={t("homeVault.next", { defaultValue: "Next" })}
+                      onClick={() => setPreview((p) => ({ ...p, i: (p.i + 1) % p.list.length }))}>→</button>
+                  </>
+                )}
+                <button type="button" className="ov-btn ov-btn--ghost" onClick={() => open(current)}>
+                  {t("homeVault.original", { defaultValue: "Original" })}
+                </button>
+                <button type="button" className="ov-btn ov-btn--ghost" onClick={() => setPreview(null)}>
+                  {t("homeVault.close", { defaultValue: "Close" })}
+                </button>
+              </span>
+            </figcaption>
+          </figure>
+        </div>
+      )}
     </div>
   );
 };

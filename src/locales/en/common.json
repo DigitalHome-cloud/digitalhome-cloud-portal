@@ -272,5 +272,20 @@
   "homeVault.kind.photo": "photo",
   "homeVault.kind.document": "document",
   "homeVault.kind.video": "video",
-  "homeVault.kind.other": "file"
+  "homeVault.kind.other": "file",
+  "homeVault.prev": "Previous",
+  "homeVault.next": "Next",
+  "homeVault.original": "Original",
+  "homeVault.close": "Close",
+  "homeConfig.graph": "Graph",
+  "homeConfig.against": "compared with",
+  "homeConfig.nothing": "— nothing —",
+  "homeConfig.draw": "Show",
+  "homeConfig.asGraph": "Graph",
+  "homeConfig.k.added": "added",
+  "homeConfig.k.removed": "removed",
+  "homeConfig.k.changed": "changed",
+  "homeConfig.k.same": "same",
+  "homeConfig.k.from": "{{a}} → {{b}}",
+  "homeConfig.k.onlyIn": "Only in {{v}}."
 }

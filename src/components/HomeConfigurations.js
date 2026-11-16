@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "gatsby-plugin-react-i18next";
 import { useSmartHome } from "../context/SmartHomeContext";
+import ConfigGraph from "./ConfigGraph";
 import { compare, configurations, graphText, graphUrl, homeIdOf, shortId } from "../utils/homeConfig";
 
 // A home's configurations (darkfactory ADR 0018): the live one, the versions
@@ -306,6 +307,9 @@ const HomeConfigurations = () => {
               </div>
               <Diff diff={diff} />
             </>
+          )}
+          {choices.length > 0 && (
+            <ConfigGraph key={home.homeId} homeId={home.homeId} choices={choices} live={data.live} onError={setError} />
           )}
         </>
       )}

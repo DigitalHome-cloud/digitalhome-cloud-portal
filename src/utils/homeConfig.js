@@ -148,3 +148,135 @@ export const bytes = (n) => {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 };
+
+// ── JSON-LD and the graph view ──────────────────────────────────────────────
+
+const XSD = "http://www.w3.org/2001/XMLSchema#";
+
+async function parse(ttl) {
+  const { Parser } = await import("n3");
+  const prefixes = {};
+  const quads = new Parser().parse(ttl || "", null, (p, ns) => { prefixes[p] = ns.value || String(ns); });
+  return { quads, prefixes };
+}
+
+/** The Turtle as JSON-LD: the Turtle's prefixes as @context, one object per node in @graph. */
+export async function toJsonLd(ttl) {
+  const { quads, prefixes } = await parse(ttl);
+  const entries = Object.entries(prefixes).sort((a, b) => b[1].length - a[1].length);
+  const compact = (iri) => {
+    for (const [p, ns] of entries) if (iri.startsWith(ns) && iri.length > ns.length) return `${p}:${iri.slice(ns.length)}`;
+    return iri;
+  };
+  const value = (o) => {
+    if (o.termType === "NamedNode") return { "@id": compact(o.value) };
+    if (o.termType === "BlankNode") return { "@id": `_:${o.value}` };
+    if (o.language) return { "@value": o.value, "@language": o.language };
+    const dt = o.datatype?.value;
+    if (!dt || dt === `${XSD}string`) return o.value;
+    return { "@value": o.value, "@type": compact(dt) };
+  };
+  const nodes = new Map();
+  for (const q of quads) {
+    const id = q.subject.termType === "BlankNode" ? `_:${q.subject.value}` : compact(q.subject.value);
+    if (!nodes.has(id)) nodes.set(id, { "@id": id });
+    const n = nodes.get(id);
+    const key = q.predicate.value === RDF_TYPE ? "@type" : compact(q.predicate.value);
+    const v = key === "@type" ? compact(q.object.value) : value(q.object);
+    n[key] = n[key] === undefined ? v : [].concat(n[key], v);
+  }
+  return { "@context": prefixes, "@graph": [...nodes.values()].sort((a, b) => a["@id"].localeCompare(b["@id"])) };
+}
+
+/** Nodes (every subject) and links (a statement whose object is another
+ *  node) of one graph, or of two merged: each node then says whether it was
+ *  added, removed, changed or is the same, and each link whether it is new or gone. */
+export async function graphModel(ttl, otherTtl = null) {
+  const pa = await parse(ttl);
+  const pb = otherTtl == null ? null : await parse(otherTtl);
+  const index = (quads) => {
+    const facts = new Map();
+    for (const q of quads) {
+      const s = q.subject.value;
+      if (!facts.has(s)) facts.set(s, new Map());
+      facts.get(s).set(`${q.predicate.value} ${key(q.object)}`, q);
+    }
+    return facts;
+  };
+  // b is the graph shown; a (when given) is what it is compared with
+  const fb = index(pa.quads);
+  const fa = pb ? index(pb.quads) : null;
+  const all = new Set([...fb.keys(), ...(fa ? fa.keys() : [])]);
+  const nodes = [...all].map((s) => {
+    const nb = fb.get(s), na = fa?.get(s);
+    let status = "same";
+    if (fa) {
+      if (!na) status = "added";
+      else if (!nb) status = "removed";
+      else if ([...nb.keys()].some((k) => !na.has(k)) || [...na.keys()].some((k) => !nb.has(k))) status = "changed";
+    }
+    const d = describe(s, nb || na);
+    const facts = [...(nb || na).values()];
+    const props = {};
+    for (const q of facts) {
+      if (q.predicate.value === RDF_TYPE || q.predicate.value === RDFS_LABEL) continue;
+      if (q.object.termType !== "Literal" && all.has(q.object.value)) continue;
+      const p = short(q.predicate);
+      (props[p] = props[p] || []).push(short(q.object));
+    }
+    return { iri: s, ...d, status, props };
+  });
+  const links = [];
+  const seen = new Set();
+  const addLinks = (facts) => {
+    for (const [s, f] of facts) for (const q of f.values()) {
+      if (q.object.termType === "Literal" || !all.has(q.object.value) || q.predicate.value === RDF_TYPE) continue;
+      const k = `${s} ${q.predicate.value} ${q.object.value}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      const inB = fb.get(s)?.has(`${q.predicate.value} ${key(q.object)}`);
+      const inA = fa?.get(s)?.has(`${q.predicate.value} ${key(q.object)}`);
+      links.push({ from: s, to: q.object.value, property: short(q.predicate), status: !fa ? "same" : inB && inA ? "same" : inB ? "added" : "removed" });
+    }
+  };
+  addLinks(fb);
+  if (fa) addLinks(fa);
+  return { nodes, links };
+}
+
+/** Positions for the graph view: a small force layout, the same every time for the same graph. */
+export function layout(model, width = 900, height = 560) {
+  const n = model.nodes.length;
+  const pos = model.nodes.map((_, i) => {
+    const a = (2 * Math.PI * i) / Math.max(n, 1);
+    return { x: width / 2 + (width / 3) * Math.cos(a), y: height / 2 + (height / 3) * Math.sin(a), vx: 0, vy: 0 };
+  });
+  const at = new Map(model.nodes.map((nd, i) => [nd.iri, i]));
+  const edges = model.links.map((l) => [at.get(l.from), at.get(l.to)]).filter(([a, b]) => a != null && b != null && a !== b);
+  const k = Math.sqrt((width * height) / Math.max(n, 1)) * 0.75;
+  for (let it = 0; it < 300; it += 1) {
+    const cool = 1 - it / 300;
+    for (let i = 0; i < n; i += 1) for (let j = i + 1; j < n; j += 1) {
+      const dx = pos[i].x - pos[j].x || 0.01, dy = pos[i].y - pos[j].y || 0.01;
+      const d2 = dx * dx + dy * dy, d = Math.sqrt(d2);
+      const f = (k * k) / d2;
+      pos[i].vx += (dx / d) * f; pos[i].vy += (dy / d) * f;
+      pos[j].vx -= (dx / d) * f; pos[j].vy -= (dy / d) * f;
+    }
+    for (const [a, b] of edges) {
+      const dx = pos[a].x - pos[b].x, dy = pos[a].y - pos[b].y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+      const f = (d * d) / k / 8;
+      pos[a].vx -= (dx / d) * f; pos[a].vy -= (dy / d) * f;
+      pos[b].vx += (dx / d) * f; pos[b].vy += (dy / d) * f;
+    }
+    for (const p of pos) {
+      p.vx += (width / 2 - p.x) * 0.01; p.vy += (height / 2 - p.y) * 0.01;
+      const v = Math.sqrt(p.vx * p.vx + p.vy * p.vy) || 1, step = Math.min(v, 40 * cool + 1);
+      p.x = Math.min(width - 60, Math.max(60, p.x + (p.vx / v) * step));
+      p.y = Math.min(height - 24, Math.max(24, p.y + (p.vy / v) * step));
+      p.vx *= 0.5; p.vy *= 0.5;
+    }
+  }
+  return pos.map(({ x, y }) => ({ x, y }));
+}
