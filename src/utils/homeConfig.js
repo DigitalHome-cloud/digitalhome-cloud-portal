@@ -33,6 +33,18 @@ export async function homeIdOf(smartHomeId) {
   return "";
 }
 
+/** The SmartHome ID of a homeId, or "" (only homes the user may list). */
+export async function smartHomeIdOf(homeId) {
+  let nextToken = null;
+  do {
+    const d = await call(HOME_IDS, { nextToken });
+    const hit = (d.listDigitalHomes.items || []).find((h) => h.homeId === homeId);
+    if (hit) return hit.smartHomeId || "";
+    nextToken = d.listDigitalHomes.nextToken;
+  } while (nextToken);
+  return "";
+}
+
 const OVERVIEW = /* GraphQL */ `
   query HomeConfigurations($homeId: String!) {
     homeConfigurations(homeId: $homeId) {
@@ -62,14 +74,30 @@ export async function graphText(homeId, id) {
 }
 
 const ITEMS = /* GraphQL */ `
-  query HomeVaultItems($homeId: String!, $configVersion: String) {
-    homeVaultItems(homeId: $homeId, configVersion: $configVersion) {
+  query HomeVaultItems($homeId: String!) {
+    homeVaultItems(homeId: $homeId) {
       homeId
-      items { sha256 kind name size contentType takenAt caption configVersion thumbUrl uploadedAt uploadedBy }
+      items { sha256 kind name size contentType takenAt caption configVersion tags thumbUrl uploadedAt uploadedBy }
     }
   }
 `;
-export const vaultItems = async (homeId) => (await call(ITEMS, { homeId })).homeVaultItems.items || [];
+/** Every item, each with its tags (the versions and options it documents). */
+export const vaultItems = async (homeId) =>
+  ((await call(ITEMS, { homeId })).homeVaultItems.items || []).map((it) => ({
+    ...it,
+    tags: it.tags && it.tags.length ? it.tags : it.configVersion ? [it.configVersion] : [],
+  }));
+
+const TAG = /* GraphQL */ `
+  mutation TagHomeVaultItems($homeId: String!, $sha256s: [String]!, $add: [String], $remove: [String]) {
+    tagHomeVaultItems(homeId: $homeId, sha256s: $sha256s, add: $add, remove: $remove)
+  }
+`;
+/** Add and remove version tags on several items at once: [{ sha256, tags }]. */
+export async function tagVaultItems(homeId, sha256s, { add = [], remove = [] } = {}) {
+  const r = (await call(TAG, { homeId, sha256s, add, remove })).tagHomeVaultItems;
+  return (typeof r === "string" ? JSON.parse(r) : r).items || [];
+}
 
 const ITEM_URL = /* GraphQL */ `
   query HomeVaultItemUrl($homeId: String!, $sha256: String!) {
