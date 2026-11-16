@@ -16,7 +16,7 @@ import {
 // with separate secrets, so a stage entry says so: two entries with the same
 // name, one of which never works on prod, is how a code gets "lost".
 const issuer = () =>
-  typeof window !== "undefined" && /^(stage-|localhost|127\.)/.test(window.location.hostname)
+  typeof window !== "undefined" && /^(stage[-.]|localhost|127\.)/.test(window.location.hostname)
     ? "DigitalHome.Cloud (stage)"
     : "DigitalHome.Cloud";
 const muted = { color: "var(--ov-muted)" };
