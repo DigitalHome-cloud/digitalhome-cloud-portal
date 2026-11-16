@@ -21,6 +21,7 @@
     "gatsby-transformer-remark": "^6.16.0",
     "gatsby-transformer-sharp": "^5.14.0",
     "i18next": "^22.5.1",
+    "n3": "^1.26.0",
     "papaparse": "^5.5.4",
     "qrcode": "^1.5.0",
     "react": "^18.2.0",

@@ -69,6 +69,19 @@ const IC = {
       <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
     </>
   ),
+  versions: S(
+    <>
+      <path d="M12 3 3 8l9 5 9-5z" />
+      <path d="m3 13 9 5 9-5" />
+    </>
+  ),
+  vault: S(
+    <>
+      <rect x="3" y="5" width="18" height="15" rx="2" />
+      <circle cx="12" cy="12.5" r="3" />
+      <path d="M12 9.5v-1M15 12.5h1" />
+    </>
+  ),
   inventory: S(
     <>
       <rect x="3" y="8" width="18" height="12" rx="2" />
@@ -280,6 +293,20 @@ const OverviewShell = ({
             label="Inventory"
             to="/inventory"
             active={active === "inventory"}
+            locked={!isAuthenticated}
+          />
+          <NavLink
+            icon={IC.versions}
+            label="Configurations"
+            to="/configurations"
+            active={active === "configurations"}
+            locked={!isAuthenticated}
+          />
+          <NavLink
+            icon={IC.vault}
+            label="Vault"
+            to="/vault"
+            active={active === "vault"}
             locked={!isAuthenticated}
           />
 
