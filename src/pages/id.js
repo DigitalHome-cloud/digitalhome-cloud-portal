@@ -5,7 +5,8 @@ import { useAuth } from "../context/AuthContext";
 import { useSmartHome } from "../context/SmartHomeContext";
 import { configurations, graphText, shortId, smartHomeIdOf } from "../utils/homeConfig";
 import { card, inventory, validHome, validItem } from "../utils/idCard";
-import { TAG_ID, bindTag, homeTag, isObservation, itemsTagged, observationId, subjectTags, uploadObservation } from "../utils/survey";
+import { TAG_ID, bindTag, homeTag, isObservation, itemUrl, itemsTagged, newTagFor, observationId, subjectTags, tagUrl, uploadObservation } from "../utils/survey";
+import { nfcAvailable, qrSvg, scanTags, setSurveyMode, surveyModeOn, writeUrl } from "../utils/nfc";
 
 import "@fontsource/ibm-plex-sans/400.css";
 import "@fontsource/ibm-plex-sans/500.css";
@@ -170,6 +171,136 @@ function Survey({ homeId, item, configVersion, kind, room, t }) {
   );
 }
 
+const errText = (e) => String(e?.errors?.[0]?.message || e?.message || e);
+
+/**
+ * This spot's link as a QR code or onto an NFC tag (both open the same page),
+ * and a new tag for the item, printed or written. NFC writing needs Chrome
+ * on Android; elsewhere the link is copied into a writer app.
+ */
+function TagTools({ url, homeId, item, t }) {
+  const nfc = nfcAvailable();
+  const [qr, setQr] = React.useState("");        // the SVG shown, for `shown`
+  const [shown, setShown] = React.useState("");  // the link the QR or the NFC step is for
+  const [step, setStep] = React.useState("");    // "" | "confirm" | "writing"
+  const [lock, setLock] = React.useState(true);
+  const [msg, setMsg] = React.useState("");
+  const showQr = async (u) => {
+    setMsg("");
+    setShown(u);
+    setQr(await qrSvg(u));
+  };
+  const write = async () => {
+    setStep("writing");
+    setMsg(t("idCard.nfcHold", { defaultValue: "Hold the phone to the tag…" }));
+    try {
+      await writeUrl(shown || url, { lock });
+      setMsg(lock ? t("idCard.nfcLocked", { defaultValue: "Written and locked." }) : t("idCard.nfcWritten", { defaultValue: "Written (not locked)." }));
+    } catch (e) {
+      setMsg(errText(e));
+    } finally {
+      setStep("");
+    }
+  };
+  const copy = async (u) => {
+    try {
+      await navigator.clipboard.writeText(u);
+      setMsg(t("idCard.copied", { defaultValue: "Link copied: paste it into an NFC writer app, then lock the tag." }));
+    } catch (e) {
+      setMsg(u);
+    }
+  };
+  const newTag = async (media) => {
+    setMsg("");
+    try {
+      const u = tagUrl(await newTagFor(homeId, item));
+      if (media === "qr") await showQr(u);
+      else {
+        setShown(u);
+        setQr("");
+        setStep("confirm");
+      }
+    } catch (e) {
+      setMsg(errText(e));
+    }
+  };
+  return (
+    <section className="idc-box">
+      <h2>{t("idCard.tagTitle", { defaultValue: "QR and NFC" })}</h2>
+      <div className="idc-row2">
+        <button type="button" className="idc-ghost" onClick={() => (qr && shown === url ? setQr("") : showQr(url))}>
+          {t("idCard.showQr", { defaultValue: "Show QR" })}
+        </button>
+        {nfc ? (
+          <button type="button" className="idc-ghost" onClick={() => { setShown(url); setQr(""); setStep("confirm"); }}>
+            {t("idCard.writeNfc", { defaultValue: "Write NFC tag" })}
+          </button>
+        ) : (
+          <button type="button" className="idc-ghost" onClick={() => copy(url)}>
+            {t("idCard.copyLink", { defaultValue: "Copy link" })}
+          </button>
+        )}
+      </div>
+      {item && homeId && (
+        <div className="idc-row2">
+          <button type="button" className="idc-ghost" onClick={() => newTag("qr")}>
+            {t("idCard.newQr", { defaultValue: "New QR tag here" })}
+          </button>
+          {nfc && (
+            <button type="button" className="idc-ghost" onClick={() => newTag("nfc")}>
+              {t("idCard.newNfc", { defaultValue: "New NFC tag here" })}
+            </button>
+          )}
+        </div>
+      )}
+      {qr && (
+        <figure className="idc-qr">
+          <div dangerouslySetInnerHTML={{ __html: qr }} />
+          <figcaption>{shown.replace(/^https?:\/\//, "")}</figcaption>
+        </figure>
+      )}
+      {step === "confirm" && (
+        <div className="idc-confirm">
+          <label className="idc-check">
+            <input type="checkbox" checked={lock} onChange={(e) => setLock(e.target.checked)} />{" "}
+            {t("idCard.nfcLock", { defaultValue: "Lock the tag afterwards (cannot be undone; recommended)" })}
+          </label>
+          <button type="button" className="idc-primary" onClick={write}>
+            {t("idCard.nfcGo", { defaultValue: "Write now" })}
+          </button>
+        </div>
+      )}
+      {!nfc && <p className="idc-note">{t("idCard.nfcHint", { defaultValue: "Any NFC phone opens a tag. Writing one from this page needs Chrome on Android; elsewhere use a writer app." })}</p>}
+      {msg && <p className="idc-note">{msg}</p>}
+    </section>
+  );
+}
+
+/** Survey mode: the page keeps reading NFC tags and opens each one it is held to. */
+function SurveyMode({ t }) {
+  const [on, setOn] = React.useState(false);
+  const [err, setErr] = React.useState("");
+  React.useEffect(() => setOn(surveyModeOn()), []);
+  React.useEffect(() => {
+    if (!on) return undefined;
+    let stop = null;
+    let gone = false;
+    scanTags((u) => window.location.assign(u.href)).then((s) => (gone ? s() : (stop = s)), (e) => { setErr(errText(e)); setOn(false); setSurveyMode(false); });
+    return () => {
+      gone = true;
+      if (stop) stop();
+    };
+  }, [on]);
+  if (!nfcAvailable()) return null;
+  return (
+    <label className="idc-check idc-mode">
+      <input type="checkbox" checked={on} onChange={(e) => { setErr(""); setSurveyMode(e.target.checked); setOn(e.target.checked); }} />{" "}
+      {t("idCard.surveyMode", { defaultValue: "Survey mode: hold the phone to the next NFC tag" })}
+      {err && <small className="idc-warn"> {err}</small>}
+    </label>
+  );
+}
+
 /** A blank tag: pick what it is stuck on, or note something the design does not have. */
 function BindScreen({ tagId, data, onBound, t, kindName }) {
   const [q, setQ] = React.useState("");
@@ -198,6 +329,7 @@ function BindScreen({ tagId, data, onBound, t, kindName }) {
         <p className="idc-note">
           {t("idCard.bindHint", { defaultValue: "From {{v}}. You can bind it again later.", v: data.short })}
         </p>
+        <SurveyMode t={t} />
         <input className="idc-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("idCard.search", { defaultValue: "Search: room, label, board №" })} />
       </section>
       <section className="idc-box">
@@ -345,6 +477,8 @@ const IdCardPage = () => {
               </p>
             </section>
             <Survey homeId={res.homeId} item={res.tag.item} configVersion={res.configVersion} kind={hint.kind} room={hint.room} t={t} />
+            <TagTools url={tagUrl(tagId)} t={t} />
+            <SurveyMode t={t} />
             <button type="button" className="idc-ghost" onClick={rebind}>
               {t("idCard.rebind", { defaultValue: "This tag is on something else: bind it again" })}
             </button>
@@ -430,6 +564,8 @@ const IdCardPage = () => {
                 {t("idCard.rebind", { defaultValue: "This tag is on something else: bind it again" })}
               </button>
             )}
+            <TagTools url={tagId ? tagUrl(tagId) : itemUrl(res.homeId, c.id)} homeId={res.homeId} item={c.id} t={t} />
+            <SurveyMode t={t} />
 
             <p className="idc-safety">
               {t("idCard.safety", {

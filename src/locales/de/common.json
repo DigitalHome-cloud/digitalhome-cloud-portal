@@ -346,5 +346,19 @@
   "idCard.observation": "Beobachtung",
   "idCard.obsHint": "Fotos und Notizen gehen in den Tresor; der Chat des Pro-Edge schlägt die Änderung am Entwurf vor, und du bestätigst sie dort.",
   "idCard.rebind": "Dieses Etikett klebt woanders: neu zuordnen",
-  "idCard.kind.other": "Sonstiges"
+  "idCard.kind.other": "Sonstiges",
+  "idCard.tagTitle": "QR und NFC",
+  "idCard.showQr": "QR anzeigen",
+  "idCard.writeNfc": "NFC-Tag beschreiben",
+  "idCard.copyLink": "Link kopieren",
+  "idCard.newQr": "Neues QR-Etikett hier",
+  "idCard.newNfc": "Neuer NFC-Tag hier",
+  "idCard.nfcHold": "Handy an den Tag halten…",
+  "idCard.nfcLocked": "Beschrieben und gesperrt.",
+  "idCard.nfcWritten": "Beschrieben (nicht gesperrt).",
+  "idCard.copied": "Link kopiert: in eine NFC-App einfügen, dann den Tag sperren.",
+  "idCard.nfcLock": "Tag danach sperren (endgültig; empfohlen)",
+  "idCard.nfcGo": "Jetzt schreiben",
+  "idCard.nfcHint": "Jedes NFC-Handy öffnet einen Tag. Beschreiben von dieser Seite geht mit Chrome auf Android; sonst mit einer NFC-App.",
+  "idCard.surveyMode": "Aufnahme-Modus: Handy an den nächsten NFC-Tag halten"
 }

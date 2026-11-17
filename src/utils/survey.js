@@ -25,6 +25,17 @@ const HOME_TAG = /* GraphQL */ `
 const BIND_TAG = /* GraphQL */ `
   mutation BindHomeTag($tagId: String!, $item: String) { bindHomeTag(tagId: $tagId, item: $item) { tagId homeId item boundAt } }
 `;
+const MINT_TAGS = /* GraphQL */ `
+  mutation MintHomeTags($homeId: String!, $count: Int!) { mintHomeTags(homeId: $homeId, count: $count) { homeId tags } }
+`;
+/** Mint one new tag for the home and bind it to an item at once: its id. */
+export async function newTagFor(homeId, item) {
+  const tagId = (await call(MINT_TAGS, { homeId, count: 1 })).mintHomeTags.tags[0];
+  await bindTag(tagId, item);
+  return tagId;
+}
+export const tagUrl = (tagId) => `${window.location.origin}/id/?t=${tagId}`;
+export const itemUrl = (homeId, item) => `${window.location.origin}/id/?h=${homeId}&i=${item}`;
 export const homeTag = async (tagId) => (await call(HOME_TAG, { tagId })).homeTag;
 export const bindTag = async (tagId, item) => (await call(BIND_TAG, { tagId, item: item || null })).bindHomeTag;
 

@@ -346,5 +346,19 @@
   "idCard.observation": "Observation",
   "idCard.obsHint": "Photos and notes go to the vault; the pro edge's chat proposes the design change, and you confirm it there.",
   "idCard.rebind": "This tag is on something else: bind it again",
-  "idCard.kind.other": "Other"
+  "idCard.kind.other": "Other",
+  "idCard.tagTitle": "QR and NFC",
+  "idCard.showQr": "Show QR",
+  "idCard.writeNfc": "Write NFC tag",
+  "idCard.copyLink": "Copy link",
+  "idCard.newQr": "New QR tag here",
+  "idCard.newNfc": "New NFC tag here",
+  "idCard.nfcHold": "Hold the phone to the tag…",
+  "idCard.nfcLocked": "Written and locked.",
+  "idCard.nfcWritten": "Written (not locked).",
+  "idCard.copied": "Link copied: paste it into an NFC writer app, then lock the tag.",
+  "idCard.nfcLock": "Lock the tag afterwards (cannot be undone; recommended)",
+  "idCard.nfcGo": "Write now",
+  "idCard.nfcHint": "Any NFC phone opens a tag. Writing one from this page needs Chrome on Android; elsewhere use a writer app.",
+  "idCard.surveyMode": "Survey mode: hold the phone to the next NFC tag"
 }

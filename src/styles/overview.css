@@ -974,3 +974,12 @@
 .idc-pick button { width: 100%; text-align: left; background: none; border: 0; color: var(--ov-text); padding: 10px 2px; cursor: pointer; font: inherit; }
 .idc-pick b { display: block; font-weight: 500; }
 .idc-pick span { display: block; font-size: 12px; color: var(--ov-muted); }
+
+/* QR and NFC on the ID card */
+.idc-row2 + .idc-row2 { margin-top: 6px; }
+.idc-qr { margin: 10px 0 0; background: #fff; border-radius: 8px; padding: 10px; text-align: center; }
+.idc-qr svg { width: 220px; height: 220px; display: block; margin: 0 auto; }
+.idc-qr figcaption { color: #333; font-size: 11px; overflow-wrap: anywhere; margin-top: 4px; }
+.idc-check { display: block; font-size: 14px; color: var(--ov-text); margin: 8px 0; }
+.idc-confirm { margin-top: 8px; }
+.idc-mode { padding: 10px 2px 0; }

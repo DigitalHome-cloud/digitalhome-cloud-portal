@@ -346,5 +346,19 @@
   "idCard.observation": "Observation",
   "idCard.obsHint": "Photos et notes vont au coffre ; le chat du pro edge propose la modification du projet, que vous confirmez là-bas.",
   "idCard.rebind": "Cette étiquette est sur autre chose : la réattribuer",
-  "idCard.kind.other": "Autre"
+  "idCard.kind.other": "Autre",
+  "idCard.tagTitle": "QR et NFC",
+  "idCard.showQr": "Afficher le QR",
+  "idCard.writeNfc": "Écrire un tag NFC",
+  "idCard.copyLink": "Copier le lien",
+  "idCard.newQr": "Nouvelle étiquette QR ici",
+  "idCard.newNfc": "Nouveau tag NFC ici",
+  "idCard.nfcHold": "Approchez le téléphone du tag…",
+  "idCard.nfcLocked": "Écrit et verrouillé.",
+  "idCard.nfcWritten": "Écrit (non verrouillé).",
+  "idCard.copied": "Lien copié : collez-le dans une appli NFC, puis verrouillez le tag.",
+  "idCard.nfcLock": "Verrouiller le tag ensuite (définitif ; recommandé)",
+  "idCard.nfcGo": "Écrire maintenant",
+  "idCard.nfcHint": "Tout téléphone NFC ouvre un tag. L'écrire depuis cette page demande Chrome sur Android ; sinon une appli NFC.",
+  "idCard.surveyMode": "Mode relevé : approchez le téléphone du tag NFC suivant"
 }
