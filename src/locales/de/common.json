@@ -325,5 +325,7 @@
   "idCard.kind.circuit": "Stromkreis",
   "idCard.kind.rcd": "FI-Schutzschalter",
   "idCard.kind.device": "Gerät",
-  "idCard.kind.board": "Verteiler"
+  "idCard.kind.board": "Verteiler",
+  "link.proHint": "Dies ist ein Pro-Edge: er arbeitet für alle deine Häuser und bekommt hier keines. Auf dem Edge jeden Arbeitsbereich seinem Haus zuordnen; Fleet zeigt dann die Häuser, für die er arbeitet.",
+  "link.approvePro": "Freigeben: arbeitet für alle deine Häuser"
 }

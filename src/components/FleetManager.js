@@ -5,6 +5,7 @@ import { useTier } from "../utils/useTier";
 import { UpgradePrompt } from "./UpgradePrompt";
 import SmartHomeForm from "./SmartHomeForm";
 import { generateClient } from "aws-amplify/api";
+import { graphqlWithFallback, kindOf } from "../utils/edgeKind";
 import { listDigitalHomes } from "../graphql/queries";
 import {
   initiateDigitalHome,
@@ -17,12 +18,15 @@ import {
 // beneath it, with status + firmware version. Pairing is initiated from the edge
 // box itself; a small assign control remains only for edges not yet placed under
 // a home.
+//
+// Two kinds of edge (darkfactory ADR 0020): a devops edge is dedicated to one
+// home and sits under it; a pro edge works for all your homes, one workspace
+// per home attached on the edge, so it gets no home here. It is listed on its
+// own with the homes its workspaces use, and appears under each of them.
 
 const client = generateClient();
 
-const LIST_MY_EDGES = /* GraphQL */ `
-  query ListMyEdges {
-    listMyEdges {
+const EDGE_FIELDS = `
       edge_id
       home_id
       machine_id
@@ -30,7 +34,20 @@ const LIST_MY_EDGES = /* GraphQL */ `
       dhe_version
       status
       last_telemetry_at
-      linked_at
+      linked_at`;
+const LIST_MY_EDGES = /* GraphQL */ `
+  query ListMyEdges {
+    listMyEdges {${EDGE_FIELDS}
+      edge_kind
+      work_homes
+      work_homes_at
+    }
+  }
+`;
+// The backend before ADR 0020 (two kinds of edge) knows only these.
+const LIST_MY_EDGES_OLD = /* GraphQL */ `
+  query ListMyEdges {
+    listMyEdges {${EDGE_FIELDS}
     }
   }
 `;
@@ -156,6 +173,61 @@ const EdgeRow = ({
   );
 };
 
+// A pro edge: no home picker. The homes its workspaces use, as it last
+// reported them (only those you may use); a pro edge linked to a home before
+// ADR 0020 can be unlinked, which takes nothing away from it.
+const ProEdgeRow = ({ e, homes, onUnlink, busy, onOpen }) => {
+  const added = relTime(e.linked_at);
+  const known = new Set(homes.map((h) => h.smartHomeId));
+  const work = (e.work_homes || []).filter((h) => known.has(h));
+  const reported = relTime(e.work_homes_at);
+  return (
+    <div className="ov-edge ov-edge--pro">
+      <span style={{ fontSize: "1rem" }} aria-hidden="true">
+        🧰
+      </span>
+      <div className="ov-edge-id">
+        <strong>{e.hostname || shortId(e.edge_id)}</strong>
+        <div>
+          {e.machine_id || shortId(e.edge_id)}
+          {added ? ` · added ${added}` : ""}
+        </div>
+        <div className="ov-edge-homes">
+          {work.length > 0 ? (
+            <>
+              Workspaces for:{" "}
+              {work.map((h) => (
+                <button key={h} type="button" className="ov-chip" onClick={() => onOpen(h)} title="Make this the active home">
+                  {h}
+                </button>
+              ))}
+              {reported ? <span className="ov-dim"> · reported {reported}</span> : null}
+            </>
+          ) : e.work_homes_at ? (
+            "No workspace attached to one of your homes yet."
+          ) : (
+            "Has not reported its workspaces yet: start or update the edge."
+          )}
+        </div>
+      </div>
+      <StatusPill active={isEdgeActive(e)} />
+      <span className="ov-edge-ver">{edgeVersion(e.dhe_version)}</span>
+      {e.home_id && (
+        <button
+          type="button"
+          className="ov-btn ov-btn--ghost"
+          disabled={busy === e.edge_id}
+          onClick={onUnlink}
+          title={`Linked to ${e.home_id} from before: a pro edge needs no home, unlinking takes nothing away`}
+          style={{ marginLeft: "auto" }}
+        >
+          {busy === e.edge_id ? "…" : `Unlink from ${e.home_id}`}
+        </button>
+      )}
+    </div>
+  );
+};
+
 const FleetManager = () => {
   const auth = useAuth();
   const { authState, isAuthenticated } = auth;
@@ -180,7 +252,7 @@ const FleetManager = () => {
     try {
       const [homesRes, edgesRes] = await Promise.all([
         client.graphql({ query: listDigitalHomes }),
-        client.graphql({ query: LIST_MY_EDGES, authMode: "userPool" }),
+        graphqlWithFallback(client, { query: LIST_MY_EDGES, authMode: "userPool" }, LIST_MY_EDGES_OLD),
       ]);
       setHomes(homesRes.data.listDigitalHomes.items || []);
       setEdges(edgesRes?.data?.listMyEdges || []);
@@ -259,11 +331,17 @@ const FleetManager = () => {
     }
   };
 
-  const edgesByHome = edges.reduce((acc, e) => {
+  const devops = edges.filter((e) => kindOf(e) === "devops");
+  const pros = edges.filter((e) => kindOf(e) === "pro");
+  const edgesByHome = devops.reduce((acc, e) => {
     if (e.home_id) (acc[e.home_id] = acc[e.home_id] || []).push(e);
     return acc;
   }, {});
-  const unassigned = edges.filter(
+  const prosByHome = pros.reduce((acc, e) => {
+    for (const h of e.work_homes || []) (acc[h] = acc[h] || []).push(e);
+    return acc;
+  }, {});
+  const unassigned = devops.filter(
     (e) => !e.home_id || !homes.some((h) => h.smartHomeId === e.home_id)
   );
 
@@ -332,6 +410,7 @@ const FleetManager = () => {
         homes.map((home) => {
           const isActive = activeHome?.id === home.smartHomeId;
           const homeEdges = edgesByHome[home.smartHomeId] || [];
+          const homePros = prosByHome[home.smartHomeId] || [];
           return (
             <div key={home.smartHomeId} className="ov-panel">
               <div className="ov-home-head">
@@ -376,14 +455,32 @@ const FleetManager = () => {
                     busy={busy}
                   />
                 ))
-              ) : (
+              ) : homePros.length === 0 ? (
                 <div className="ov-noedge">
                   No edge paired — pair it from the edge box.
                 </div>
-              )}
+              ) : null}
+              {homePros.map((e) => (
+                <div key={e.edge_id} className="ov-noedge ov-edge-pro-here">
+                  🧰 {e.hostname || shortId(e.edge_id)} · pro edge, a workspace here
+                </div>
+              ))}
             </div>
           );
         })
+      )}
+
+      {pros.length > 0 && (
+        <div className="ov-unassigned ov-pros">
+          <div className="ov-unassigned-head">
+            Pro edges ({pros.length}) — each works for all your homes; its
+            workspaces are attached to their homes on the edge
+          </div>
+          {pros.map((e) => (
+            <ProEdgeRow key={e.edge_id} e={e} homes={homes} onUnlink={() => assign(e.edge_id, null)}
+                        busy={busy} onOpen={(id) => setActiveHome(id)} />
+          ))}
+        </div>
       )}
 
       {unassigned.length > 0 && (

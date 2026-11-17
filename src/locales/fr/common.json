@@ -325,5 +325,7 @@
   "idCard.kind.circuit": "Circuit",
   "idCard.kind.rcd": "Différentiel",
   "idCard.kind.device": "Appareil",
-  "idCard.kind.board": "Tableau"
+  "idCard.kind.board": "Tableau",
+  "link.proHint": "C'est un edge pro : il travaille pour toutes vos maisons, il n'en reçoit donc aucune ici. Sur l'edge, rattachez chaque espace de travail à sa maison ; Fleet liste ensuite les maisons pour lesquelles il travaille.",
+  "link.approvePro": "Approuver : travaille pour toutes vos maisons"
 }
