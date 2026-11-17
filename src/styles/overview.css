@@ -950,3 +950,27 @@
 .idc-links { display: flex; gap: 8px; }
 .idc-links button { background: transparent; border: 1px solid var(--ov-line-2); color: var(--ov-text); border-radius: 6px; padding: 6px 10px; font: inherit; cursor: pointer; }
 .idc-fine { font-size: 11px; color: var(--ov-dim); text-align: center; margin: 8px 0 0; }
+
+/* the survey on the ID card, and the bind screen of a blank tag (ADR 0018 point 10) */
+.idc-input { width: 100%; box-sizing: border-box; margin: 6px 0; padding: 10px 12px; font: 16px "IBM Plex Sans", system-ui, sans-serif;
+             color: var(--ov-text); background: var(--ov-bg); border: 1px solid var(--ov-line-2); border-radius: 8px; }
+.idc-row2 { display: flex; gap: 8px; }
+.idc-row2 .idc-input { flex: 1 1 0; min-width: 0; }
+.idc-primary, .idc-ghost { width: 100%; padding: 12px; border-radius: 8px; font: 600 15px "IBM Plex Sans", system-ui, sans-serif; cursor: pointer; }
+.idc-primary { background: var(--ov-green); color: #0b0f0d; border: 0; margin-top: 4px; }
+.idc-primary:disabled { opacity: 0.45; cursor: default; }
+.idc-ghost { background: transparent; color: var(--ov-muted); border: 1px solid var(--ov-line-2); }
+.idc-camera { display: block; margin: 8px 0 2px; }
+.idc-camera input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.idc-camera span { display: block; text-align: center; padding: 14px; border: 1px dashed var(--ov-cyan); border-radius: 8px; color: var(--ov-cyan);
+                   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.idc-photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 6px; }
+.idc-photos figure { margin: 0; }
+.idc-photos img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; display: block; }
+.idc-photos figcaption { font-size: 11px; color: var(--ov-muted); line-height: 1.25; margin-top: 2px; overflow-wrap: anywhere; }
+.idc-doc { display: flex; align-items: center; justify-content: center; aspect-ratio: 1; background: var(--ov-bg); border-radius: 6px; font-size: 26px; }
+.idc-pick { list-style: none; margin: 0; padding: 0; }
+.idc-pick li + li { border-top: 1px solid var(--ov-line); }
+.idc-pick button { width: 100%; text-align: left; background: none; border: 0; color: var(--ov-text); padding: 10px 2px; cursor: pointer; font: inherit; }
+.idc-pick b { display: block; font-weight: 500; }
+.idc-pick span { display: block; font-size: 12px; color: var(--ov-muted); }

@@ -164,3 +164,28 @@ export function card(quads, item) {
 /** The item id is minted (ws-…, circuit-…, pt-…): letters, digits and dashes only. */
 export const validItem = (i) => typeof i === "string" && /^[a-z][a-z0-9-]{2,60}$/.test(i);
 export const validHome = (h) => typeof h === "string" && /^h-[a-z2-9]{10}$/.test(h);
+
+/**
+ * Everything a blank tag can stand for, for the bind screen: the points
+ * (sockets, switches, lights, outlets) grouped by room, then the circuits,
+ * the RCDs and the other board devices. Each: { id, kind, label, room, sub }.
+ */
+export function inventory(quads) {
+  const g = index(quads);
+  const out = [];
+  for (const s of g.keys()) {
+    const kind = kindOf(g, s);
+    if (!["point", "circuit", "rcd", "device"].includes(kind)) continue;
+    const label = val(g, s, `${DHP}labelText`) || val(g, s, LABEL) || local(s);
+    if (kind === "point") {
+      const p = pointFacts(g, s);
+      const c = val(g, s, `${DHP}onCircuit`);
+      out.push({ id: local(s), kind, pointKind: p.pointKind, label, room: p.room, sub: c ? val(g, c, LABEL) || local(c) : "" });
+    } else {
+      const pl = place(g, kind === "circuit" ? breakerOf(g, s) || s : s);
+      out.push({ id: local(s), kind, label, room: "", sub: pl ? `${pl.board}${pl.modules ? ` · № ${pl.modules}` : ""}` : "" });
+    }
+  }
+  const order = { point: 0, circuit: 1, rcd: 2, device: 3 };
+  return out.sort((a, b) => order[a.kind] - order[b.kind] || a.room.localeCompare(b.room) || a.label.localeCompare(b.label));
+}
