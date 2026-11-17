@@ -12,6 +12,7 @@ import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/600.css";
 import "../styles/overview.css";
 import "../styles/link.css";
+import { graphqlWithFallback, kindOf } from "../utils/edgeKind";
 
 // Edge ↔ Cloud pairing approval page (DH-SPEC-100 / edge-cloud-api.md §2),
 // in the Overview rail shell (Manage → Link an edge).
@@ -28,14 +29,22 @@ import "../styles/link.css";
 
 const client = generateClient();
 
-const DESCRIBE_DEVICE_CODE = /* GraphQL */ `
-  query DescribeDeviceCode($user_code: String!) {
-    describeDeviceCode(user_code: $user_code) {
+const DESCRIBE_FIELDS = `
       status
       hostname
       lan_ip
       dhe_version
-      machine_id
+      machine_id`;
+const DESCRIBE_DEVICE_CODE = /* GraphQL */ `
+  query DescribeDeviceCode($user_code: String!) {
+    describeDeviceCode(user_code: $user_code) {${DESCRIBE_FIELDS}
+      edge_kind
+    }
+  }
+`;
+const DESCRIBE_DEVICE_CODE_OLD = /* GraphQL */ `
+  query DescribeDeviceCode($user_code: String!) {
+    describeDeviceCode(user_code: $user_code) {${DESCRIBE_FIELDS}
     }
   }
 `;
@@ -159,11 +168,11 @@ const LinkPage = ({ location }) => {
       setLoadingDevice(true);
       setError("");
       try {
-        const res = await client.graphql({
-          query: DESCRIBE_DEVICE_CODE,
-          variables: { user_code: code },
-          authMode: "userPool",
-        });
+        const res = await graphqlWithFallback(
+          client,
+          { query: DESCRIBE_DEVICE_CODE, variables: { user_code: code }, authMode: "userPool" },
+          DESCRIBE_DEVICE_CODE_OLD
+        );
         setDevice(res?.data?.describeDeviceCode || null);
       } catch (err) {
         console.error("describeDeviceCode failed", err);
@@ -268,6 +277,8 @@ const LinkPage = ({ location }) => {
     }
   };
 
+  const isPro = !!device && kindOf(device) === "pro";
+
   const handleApprove = async () => {
     // Two-step: the home is optional here. Approve with no home to register the
     // box to your account and assign it later from "My Edges".
@@ -279,7 +290,8 @@ const LinkPage = ({ location }) => {
         query: APPROVE_DEVICE_CODE,
         variables: {
           user_code: userCode.trim().toUpperCase(),
-          home_id: selectedHome || null,
+          // a pro edge works for all your homes: it is linked to none (ADR 0020)
+          home_id: isPro ? null : selectedHome || null,
         },
         authMode: "userPool",
       });
@@ -451,6 +463,15 @@ const LinkPage = ({ location }) => {
                 <span className="lk-num">3</span>
                 <span className="lk-step-title">{T("link.step.home", "Home")}</span>
               </div>
+              {isPro ? (
+                <p className="lk-step-hint">
+                  {T(
+                    "link.proHint",
+                    "This is a pro edge: it works for all your homes, so it gets none here. On the edge, attach each workspace to its home; Fleet then lists the homes it works for."
+                  )}
+                </p>
+              ) : (
+              <>
               <p className="lk-step-hint">
                 {T(
                   "link.homeHint",
@@ -533,6 +554,8 @@ const LinkPage = ({ location }) => {
                   </button>
                 </form>
               )}
+              </>
+              )}
 
               {message && <p className="ov-msg">{message}</p>}
               {error && device && <p className="ov-err">{error}</p>}
@@ -546,6 +569,8 @@ const LinkPage = ({ location }) => {
                 >
                   {submitting
                     ? T("link.approving", "Approving…")
+                    : isPro
+                    ? T("link.approvePro", "Approve: works for all your homes")
                     : chosen
                     ? T("link.approveTo", "Approve and link to {{id}}", { id: chosen.smartHomeId })
                     : T("link.approveRegister", "Approve (register only)")}

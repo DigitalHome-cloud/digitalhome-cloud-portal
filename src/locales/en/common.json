@@ -325,5 +325,7 @@
   "idCard.kind.circuit": "Circuit",
   "idCard.kind.rcd": "RCD",
   "idCard.kind.device": "Device",
-  "idCard.kind.board": "Board"
+  "idCard.kind.board": "Board",
+  "link.proHint": "This is a pro edge: it works for all your homes, so it gets none here. On the edge, attach each workspace to its home; Fleet then lists the homes it works for.",
+  "link.approvePro": "Approve: works for all your homes"
 }

@@ -732,6 +732,16 @@
   color: var(--ov-amber);
 }
 
+/* pro edges (ADR 0020): their own section, solid, no home picker */
+.ov-pros { border-style: solid; }
+.ov-pros .ov-unassigned-head { color: var(--ov-cyan); }
+.ov-edge-id .ov-edge-homes { margin-top: 0.3rem; font-size: 0.74rem; color: var(--ov-muted); display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
+.ov-chip { font: 500 0.72rem "IBM Plex Mono", monospace; color: var(--ov-text); background: transparent;
+           border: 1px solid var(--ov-line-2); border-radius: 999px; padding: 0.1rem 0.55rem; cursor: pointer; }
+.ov-chip:hover { border-color: var(--ov-cyan); }
+.ov-dim { color: var(--ov-dim); }
+.ov-edge-pro-here { color: var(--ov-muted); }
+
 /* ── area-data pages (Operator / Areas) ── */
 .ov-head-row {
   display: flex;
